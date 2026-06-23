@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>noon · Facilitators Operations Dashboard</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#171e26; --panel2:#1d2630; --line:#2a3540;
+    --txt:#e8edf2; --mut:#8a99a8; --teal:#1ec8a5; --teal-d:#0f9b80;
+    --green:#34d399; --amber:#f5b945; --red:#f06a6a; --blue:#5aa9e6;
+    --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--txt);font-size:14px;line-height:1.4}
+  .wrap{max-width:1260px;margin:0 auto;padding:22px 26px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .logo{font-size:26px;font-weight:800;letter-spacing:-1px;color:var(--teal)}
+  .logo span{color:var(--txt)}
+  .sub{color:var(--mut);font-size:13px}
+  .role{display:flex;gap:8px;margin:18px 0 22px}
+  .role button{background:var(--panel);border:1px solid var(--line);color:var(--mut);
+    padding:8px 16px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s}
+  .role button.active{background:var(--teal);color:#06231d;border-color:var(--teal)}
+  .role button:not(.active):hover{color:var(--txt);border-color:var(--teal-d)}
+  /* filters */
+  .filterbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  .ctx{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:12px}
+  .ctx select{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px}
+  .ms{position:relative}
+  .mstrig{background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:8px 13px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .mstrig.has{color:var(--teal);border-color:var(--teal-d)}
+  .mstrig .car{font-size:10px}
+  .mspanel{position:absolute;z-index:40;top:112%;left:0;min-width:240px;max-width:320px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:8px}
+  .mssearch{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:7px 9px;font-size:13px;margin-bottom:6px}
+  .msrows{max-height:260px;overflow:auto}
+  .msrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--txt)}
+  .msrow:hover{background:var(--panel)}
+  .msrow.on{color:var(--teal)}
+  .msrow .ck{width:14px;display:inline-block;color:var(--teal);font-weight:800}
+  .msclear{padding:7px 8px;color:var(--mut);font-size:12px;cursor:pointer;border-top:1px solid var(--line);margin-top:4px}
+  .msclear:hover{color:var(--red)}
+  .clearall{background:transparent;border:1px solid var(--line);color:var(--mut);padding:8px 12px;border-radius:9px;cursor:pointer;font-size:12px}
+  .clearall:hover{color:var(--red);border-color:var(--red)}
+  /* metric charts */
+  .sectitle{font-size:17px;font-weight:800;margin:26px 0 2px}
+  .secsub{color:var(--mut);font-size:12.5px;margin-bottom:12px}
+  .cmpscope{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .cmpscope button{background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:6px 13px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit}
+  .cmpscope button.on{background:var(--teal);color:#06231d;border-color:var(--teal)}
+  .cmpscope button:not(.on):hover{color:var(--txt);border-color:var(--teal-d)}
+  .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:8px}
+  .mcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .mcard h4{font-size:13.5px;margin-bottom:2px}
+  .mhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .vbadge{font-size:11px;font-weight:700;border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .vbadge.up{background:rgba(52,211,153,.15);color:var(--green)}
+  .vbadge.down{background:rgba(240,106,106,.16);color:var(--red)}
+  .cmp{margin-top:12px;display:flex;flex-direction:column;gap:12px}
+  .cmprow{display:flex;align-items:center;gap:10px}
+  .cmplab{font-size:12px;color:var(--mut);width:80px;flex:0 0 auto;text-align:start}
+  .cmptrack{flex:1;height:14px;background:var(--bg);border-radius:8px;overflow:hidden}
+  .cmptrack>i{display:block;height:100%;border-radius:8px;transition:width .3s}
+  .cmpval{font-size:13px;width:52px;flex:0 0 auto;text-align:end}
+  [dir=rtl] .cmptrack>i{float:right}
+  .pie-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:10px}
+  .pielegend{display:flex;flex-direction:column;gap:7px;width:100%}
+  .pieleg{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut)}
+  .pieleg b{color:var(--txt)}
+  .mcard .mdesc{color:var(--mut);font-size:11.5px;margin-bottom:8px;min-height:30px}
+  .mlegend{display:flex;gap:14px;font-size:11px;color:var(--mut);margin-top:8px;flex-wrap:wrap}
+  .mlegend b{color:var(--txt)}
+  .minsight{font-size:11.5px;color:var(--mut);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+  @media(max-width:760px){.mgrid{grid-template-columns:1fr}}
+  /* language toggle + RTL */
+  .langbtn{font-family:inherit}
+  [dir=rtl] body{direction:rtl}
+  [dir=rtl] th,[dir=rtl] td{text-align:right}
+  [dir=rtl] td.num,[dir=rtl] th.num{text-align:left}
+  [dir=rtl] .kpi .lbl,[dir=rtl] .crumb,[dir=rtl] .secsub{letter-spacing:0}
+  [dir=rtl] .bar>i{float:right}
+  /* sidebar layout */
+  .layout{display:flex;gap:20px;align-items:flex-start}
+  .sidebar{flex:0 0 212px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;position:sticky;top:18px}
+  .sidebar button{display:flex;align-items:center;gap:9px;width:100%;text-align:start;background:transparent;border:none;color:var(--mut);padding:11px 12px;border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;margin-bottom:4px;font-family:inherit}
+  .sidebar button.active{background:var(--teal);color:#06231d}
+  .sidebar button:not(.active):not(:disabled):hover{background:var(--panel2);color:var(--txt)}
+  .sidebar button:disabled{opacity:.38;cursor:not-allowed}
+  .sidebar .sblabel{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);padding:4px 12px 8px}
+  .main{flex:1;min-width:0}
+  .sbtoggle{font-size:16px;line-height:1;padding:8px 13px!important;color:var(--mut)}
+  .sbtoggle.on{color:var(--teal);border-color:var(--teal-d)!important}
+  /* action plan */
+  .apmetrics{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 6px}
+  .apmetric{display:flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 12px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--mut);font-family:inherit}
+  .apmetric:hover{color:var(--txt);border-color:var(--teal-d)}
+  .apmetric.active{background:var(--teal);color:#06231d;border-color:var(--teal)}
+  .apmetric .ic{font-size:15px}
+  .apbrief{font-size:14.5px;line-height:1.6;color:var(--txt);margin:6px 0 16px}
+  .apchips{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .apchip{border:1px solid var(--line);border-inline-start-width:4px;border-radius:10px;padding:12px 16px;background:var(--panel2)}
+  .apchip .apnum{font-size:30px;font-weight:800;line-height:1}
+  .apchip .aplbl{font-size:12.5px;color:var(--txt);font-weight:600;margin-top:3px}
+  .apchip .appct{font-size:11px;color:var(--mut)}
+  .pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .namepill{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .namepill.starred{border-color:var(--amber);color:var(--amber)}
+  .starbtn{background:transparent;border:none;cursor:pointer;color:var(--amber);font-size:15px;line-height:1;padding:0}
+  .card h3 .dot{width:11px;height:11px}
+  .rankcell{font-weight:800;font-size:14px;color:var(--mut)}
+  .tscroll{overflow-x:auto}
+  .tscroll table{min-width:980px}
+  .tscroll th,.tscroll td{padding:9px 8px;white-space:nowrap}
+  .tscroll td.twrap{white-space:normal;min-width:180px;max-width:240px}
+  .todolist{margin-top:4px}
+  .todo{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+  .todo:last-child{border-bottom:none}
+  .todo input[type=checkbox]{margin-top:3px;width:17px;height:17px;accent-color:var(--teal);cursor:pointer;flex:0 0 auto}
+  .todo.done .todobody{opacity:.5}
+  .todo.done .todohead b{text-decoration:line-through}
+  .todobody{flex:1;min-width:0}
+  .todoaction{font-size:12.5px;color:var(--txt);margin:3px 0 7px}
+  .cmt{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:7px 10px;font-size:12.5px;font-family:inherit}
+  .cmt:focus{outline:none;border-color:var(--teal-d)}
+  .cmt.reqd{border-color:var(--red)}
+  .reqmsg{color:var(--red);font-size:11.5px;margin-top:5px;font-weight:600}
+  .apstudent{border:1px solid var(--line);border-radius:12px;padding:6px 16px 10px;margin-bottom:12px;background:var(--panel2)}
+  .apstudent-head{display:flex;align-items:center;gap:10px;font-size:14.5px;padding:10px 2px;border-bottom:1px solid var(--line);margin-bottom:4px}
+  .apstudent-head .prog{font-size:12px;font-weight:700;color:var(--mut);background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:2px 10px}
+  .ai-actions{margin-inline-start:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .impact{margin-top:7px;margin-inline-start:32px;font-size:12px;font-weight:700;border-radius:8px;padding:5px 10px;display:inline-block}
+  .impact.up{background:rgba(52,211,153,.13);color:var(--green)}
+  .impact.flat{background:rgba(138,153,168,.13);color:var(--mut)}
+  [dir=rtl] .impact{margin-inline-start:0;margin-inline-end:32px}
+  .actbtn.ai{border-color:#a78bfa;color:#a78bfa}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;padding:20px}
+  .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:560px;width:100%;box-shadow:var(--shadow)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);font-size:15px}
+  .modal-x{background:transparent;border:none;color:var(--mut);font-size:16px;cursor:pointer}
+  .modal-body{padding:18px;font-size:13.5px;line-height:1.7;color:var(--txt);white-space:pre-wrap;max-height:60vh;overflow:auto}
+  .modal-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;border-top:1px solid var(--line)}
+  .apstudent-head .prog.all{color:var(--green);border-color:var(--green)}
+  .execsum{font-size:12.5px;color:var(--mut);line-height:1.6;margin:8px 2px 8px;padding-inline-start:8px;border-inline-start:3px solid var(--amber)}
+  .execsum .urgent{color:var(--red);font-weight:700}
+  .task{padding:9px 2px;border-bottom:1px solid var(--line)}
+  .task:last-child{border-bottom:none}
+  .taskmain{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .chk{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:transparent;color:#06231d;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+  .chk:hover{border-color:var(--teal-d)}
+  .chk.on{background:var(--teal);border-color:var(--teal)}
+  .tag{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--amber);white-space:nowrap}
+  .taskaction{font-size:12.5px;color:var(--txt);flex:1;min-width:150px}
+  .task.done .taskaction{text-decoration:line-through;color:var(--mut)}
+  .task.done .tag{opacity:.6}
+  .noteBtn{flex:0 0 auto;background:transparent;border:none;cursor:pointer;font-size:15px;opacity:.4;padding:0}
+  .noteBtn:hover{opacity:1}
+  .noteBtn.has{opacity:1}
+  .notewrap{margin:8px 0 2px 32px}
+  .notedone{font-size:12px;color:var(--mut);margin:6px 0 2px 32px}
+  .apcomment{margin-top:10px}
+  .dateinput{background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 11px;font-size:12.5px;font-family:inherit;color-scheme:dark}
+  .drow{padding:11px 2px;border-bottom:1px solid var(--line)}
+  .drow:last-child{border-bottom:none}
+  .drow-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+  .dtrend{margin-inline-start:auto;font-size:11.5px;font-weight:700}
+  .dtrend.over{color:var(--green)} .dtrend.low{color:var(--red)} .dtrend.normal{color:var(--mut)}
+  .badge{background:rgba(52,211,153,.15);color:var(--green);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700}
+  .badge.neg{background:rgba(240,106,106,.16);color:var(--red)}
+  .dstats{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .dstat{display:inline-flex;align-items:center;gap:5px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:12px}
+  .dstat .dlbl{color:var(--mut)}
+  .dayreason{font-size:12.5px;margin:7px 0 2px;padding-inline-start:8px;border-inline-start:3px solid var(--line)}
+  .dayreason.low{color:var(--red);border-inline-start-color:var(--red)}
+  .dayreason.over{color:var(--green);border-inline-start-color:var(--green)}
+  .abslist{display:flex;flex-direction:column;gap:8px}
+  .absrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+  .absname{display:flex;align-items:center;gap:4px;font-size:13.5px}
+  .actbtns{margin-inline-start:auto;display:flex;gap:8px}
+  .actbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--txt);background:var(--bg);font-family:inherit}
+  .actbtn.wa{border-color:#25d366;color:#25d366}
+  .actbtn.call{border-color:var(--blue);color:var(--blue)}
+  .actbtn.praise{border-color:var(--amber);color:var(--amber)}
+  .actbtn:hover{filter:brightness(1.2)}
+  .avatar{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#06231d;font-weight:800;font-size:13px;flex:0 0 auto;vertical-align:middle;margin-inline-end:8px;text-transform:uppercase}
+  .avatar.sm{width:22px;height:22px;font-size:11px;margin-inline-end:6px}
+  td .avatar{margin-inline-end:9px}
+  [dir=rtl] .notewrap,[dir=rtl] .notedone{margin-left:0;margin-right:32px}
+  @media(max-width:760px){.layout{flex-direction:column}.sidebar{position:static;width:100%;display:flex;gap:6px;flex-wrap:wrap}.sidebar .sblabel{display:none}.sidebar button{width:auto}}
+  .crumb{color:var(--mut);font-size:13px;margin-bottom:14px}
+  .crumb a{color:var(--teal);cursor:pointer;text-decoration:none}
+  .crumb a:hover{text-decoration:underline}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .kpi .lbl{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:26px;font-weight:800;margin-top:4px}
+  .kpi .note{font-size:11px;color:var(--mut);margin-top:2px}
+  .kpidelta{font-size:12px;font-weight:700;margin-top:5px}
+  .kpicmp{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .kpicmp button{background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:6px 13px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit}
+  .kpicmp button.on{background:var(--teal);color:#06231d;border-color:var(--teal)}
+  .kpicmp button:not(.on):hover{color:var(--txt);border-color:var(--teal-d)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h3{font-size:14px;margin-bottom:4px}
+  .card .desc{color:var(--mut);font-size:12px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:9px 10px;font-size:13px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none}
+  th:hover{color:var(--txt)}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:var(--panel2)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;min-width:60px;margin-top:4px}
+  .bar>i{display:block;height:100%;border-radius:4px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+  .p-green{background:rgba(52,211,153,.15);color:var(--green)}
+  .p-amber{background:rgba(245,185,69,.15);color:var(--amber)}
+  .p-red{background:rgba(240,106,106,.16);color:var(--red)}
+  .p-blue{background:rgba(90,169,230,.15);color:var(--blue)}
+  .flag{font-size:11px;color:var(--mut)}
+  .rankbar{display:flex;align-items:center;gap:8px}
+  .mini{flex:1}
+  .legend{display:flex;gap:16px;color:var(--mut);font-size:11px;margin-top:10px;flex-wrap:wrap}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .full{grid-column:1 / -1;margin-bottom:16px}
+  .hint{color:var(--mut);font-size:12px;margin-top:10px}
+  .stack{display:flex;height:26px;border-radius:6px;overflow:hidden;margin-top:6px}
+  .stack>i{display:block;height:100%}
+  .scatcell{position:relative}
+</style>
+</head>
+<body>
+<div id="gate" style="position:fixed;inset:0;z-index:1000;background:#0f1419;display:flex;align-items:center;justify-content:center">
+  <div style="background:#171e26;border:1px solid #2a3540;border-radius:16px;padding:34px 30px;width:320px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5)">
+    <div style="font-size:28px;font-weight:800;color:#1ec8a5;letter-spacing:-1px">no·on</div>
+    <div style="color:#8a99a8;font-size:13px;margin:8px 0 20px">لوحة عمليات الميسّرين — الدخول</div>
+    <input id="gatePw" type="password" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')tryGate()"
+      style="width:100%;background:#0f1419;border:1px solid #2a3540;color:#e8edf2;border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;text-align:center">
+    <div id="gateErr" style="color:#f06a6a;font-size:12px;height:16px;margin-top:8px"></div>
+    <button onclick="tryGate()" style="width:100%;background:#1ec8a5;color:#06231d;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px">دخول</button>
+  </div>
+</div>
+<script>
+  const GATE_PASSWORD="noon2026";  // ← غيّر كلمة المرور من هنا
+  function tryGate(){const v=document.getElementById('gatePw').value;
+    if(v===GATE_PASSWORD){localStorage.setItem('noonGate','1');document.getElementById('gate').style.display='none';}
+    else{document.getElementById('gateErr').textContent='كلمة المرور غير صحيحة';}}
+  if(localStorage.getItem('noonGate')==='1'){var g=document.getElementById('gate');if(g)g.style.display='none';}
+  else{setTimeout(()=>{var i=document.getElementById('gatePw');if(i)i.focus();},100);}
+</script>
+<div class="wrap">
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <svg width="118" height="44" viewBox="0 0 240 90" xmlns="http://www.w3.org/2000/svg" aria-label="noon">
+          <path d="M16 80 V44 a18 18 0 0 1 36 0 V80" fill="none" stroke="var(--txt)" stroke-width="13" stroke-linecap="round"/>
+          <circle cx="86" cy="62" r="18" fill="none" stroke="var(--txt)" stroke-width="13"/>
+          <circle cx="142" cy="58" r="27" fill="var(--teal)"/>
+          <path d="M130 60 q12 15 24 0" fill="none" stroke="#0f1419" stroke-width="5.5" stroke-linecap="round"/>
+          <path d="M178 80 V44 a18 18 0 0 1 36 0 V80" fill="none" stroke="var(--txt)" stroke-width="13" stroke-linecap="round"/>
+        </svg>
+        <span id="h-title" style="font-size:15px;font-weight:700;color:var(--txt)">Facilitators Operations Dashboard</span>
+      </div>
+      <div class="sub" id="h-sub">Turning the semester dataset into who needs attention, why, and what to do next.</div>
+    </div>
+    <div class="sub" id="h-stat" style="text-align:right">427 students · 5 schools · 21 classes<br>Semester snapshot</div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <div class="role">
+        <button class="sbtoggle" id="sbtoggle" onclick="toggleSb()" title="Toggle sidebar">☰</button>
+        <button class="active" data-role="mgmt"></button>
+        <button data-role="leader"></button>
+        <button data-role="fac"></button>
+        <button class="langbtn" id="langbtn" onclick="toggleLang()" style="margin-inline-start:auto"></button>
+      </div>
+
+      <div class="filterbar" id="filterbar"></div>
+      <div class="crumb" id="crumb"></div>
+      <div id="app"></div>
+      <div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()"></div>
+    </main>
+  </div>
+</div>
+
+<script>const STUDENTS = [{"id": 647441, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4492, "eoc": 0.59, "att": 0.86, "mission": 1.0, "trust": 0.5, "practice": 2396.0, "corr": 0.27, "exit": 0.54, "temp": 0.97, "name": "Adel Al-Otaibi"}, {"id": 647442, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3898, "eoc": 0.7, "att": 0.95, "mission": 0.3, "trust": 1.0, "practice": 1215.0, "corr": 0.357, "exit": 0.64, "temp": 0.96, "name": "Mishaal Al-Ghamdi"}, {"id": 647443, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4746, "eoc": 0.7, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 1752.0, "corr": 0.498, "exit": 0.63, "temp": 0.8, "name": "Sami Al-Subaie"}, {"id": 647444, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4153, "eoc": 0.54, "att": 0.96, "mission": 0.9, "trust": 1.0, "practice": 2177.0, "corr": 0.321, "exit": 0.54, "temp": 0.99, "name": "Basel Al-Najjar"}, {"id": 647445, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4407, "eoc": 0.43, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 1792.0, "corr": 0.363, "exit": 0.6, "temp": 0.82, "name": "Badr Al-Hamdan"}, {"id": 647446, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3729, "eoc": 0.33, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 1640.0, "corr": 0.295, "exit": 0.48, "temp": 0.97, "name": "Omar Al-Asiri"}, {"id": 647447, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4153, "eoc": 0.56, "att": 0.92, "mission": 0.5, "trust": 1.0, "practice": 1568.0, "corr": 0.358, "exit": 0.56, "temp": 0.89, "name": "Saud Al-Qahtani"}, {"id": 647448, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3475, "eoc": 0.49, "att": 0.9, "mission": 0.9, "trust": 1.0, "practice": 2052.0, "corr": 0.269, "exit": 0.52, "temp": 0.98, "name": "Saif Al-Zahrani"}, {"id": 647449, "school": "School C", "fac": 368, "level": "L1", "diag": 0.322, "eoc": 0.36, "att": 1.0, "mission": 0.2, "trust": 1.0, "practice": 1982.0, "corr": 0.282, "exit": 0.46, "temp": 0.83, "name": "Suhail Al-Subaie"}, {"id": 647450, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3475, "eoc": 0.65, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 1912.0, "corr": 0.371, "exit": 0.63, "temp": 0.7, "name": "Khalid Al-Habib"}, {"id": 647451, "school": "School C", "fac": 368, "level": "L1", "diag": 0.322, "eoc": 0.51, "att": 1.0, "mission": 0.5, "trust": 1.0, "practice": 1582.0, "corr": 0.346, "exit": 0.54, "temp": 0.97, "name": "Ibrahim Al-Habib"}, {"id": 647452, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4746, "eoc": 0.67, "att": 0.82, "mission": 0.9, "trust": 1.0, "practice": 1766.0, "corr": 0.45, "exit": 0.68, "temp": 0.93, "name": "Fahad Al-Shammari"}, {"id": 647453, "school": "School C", "fac": 369, "level": "L2", "diag": 0.5932, "eoc": 0.76, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2304.0, "corr": 0.434, "exit": 0.76, "temp": 0.96, "name": "Naif Al-Maliki"}, {"id": 647454, "school": "School C", "fac": 369, "level": "L1", "diag": 0.4407, "eoc": 0.62, "att": 0.76, "mission": 0.9, "trust": 1.0, "practice": 2059.0, "corr": 0.403, "exit": 0.67, "temp": 1.0, "name": "Basel Al-Sulaiman"}, {"id": 647455, "school": "School C", "fac": 369, "level": "L1", "diag": 0.4661, "eoc": 0.74, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 3429.0, "corr": 0.341, "exit": 0.66, "temp": 0.86, "name": "Badr Al-Dossari"}, {"id": 647456, "school": "School C", "fac": 384, "level": "L1", "diag": 0.5169, "eoc": 0.62, "att": 0.94, "mission": 1.0, "trust": 0.9, "practice": 2452.0, "corr": 0.463, "exit": 0.61, "temp": 0.99, "name": "Badr Al-Anazi"}, {"id": 647457, "school": "School C", "fac": 384, "level": "L2", "diag": 0.6356, "eoc": 0.71, "att": 1.0, "mission": 1.0, "trust": 0.91, "practice": 2801.0, "corr": 0.596, "exit": 0.75, "temp": 0.94, "name": "Yousef Al-Yami"}, {"id": 647458, "school": "School C", "fac": 384, "level": "L2", "diag": 0.5508, "eoc": 0.71, "att": 0.95, "mission": 1.0, "trust": 0.91, "practice": 3016.0, "corr": 0.539, "exit": 0.61, "temp": 0.88, "name": "Naif Al-Asiri"}, {"id": 647460, "school": "School C", "fac": 384, "level": "L1", "diag": 0.3814, "eoc": 0.6, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2168.0, "corr": 0.426, "exit": 0.66, "temp": 1.0, "name": "Zaid Al-Saleh"}, {"id": 648902, "school": "School C", "fac": 368, "level": "L1", "diag": 0.2966, "eoc": 0.42, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 2434.0, "corr": 0.272, "exit": 0.49, "temp": 0.8, "name": "Saud Al-Najjar"}, {"id": 648903, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3559, "eoc": 0.31, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 3448.0, "corr": 0.258, "exit": 0.5, "temp": 0.95, "name": "Basel Al-Dossari"}, {"id": 648904, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3559, "eoc": 0.6, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 1504.0, "corr": 0.347, "exit": 0.57, "temp": 0.85, "name": "Adel Al-Khaldi"}, {"id": 648906, "school": "School C", "fac": 384, "level": "L1", "diag": 0.339, "eoc": 0.59, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1828.0, "corr": 0.358, "exit": 0.62, "temp": 1.0, "name": "Saad Al-Dossari"}, {"id": 648907, "school": "School C", "fac": 369, "level": "L1", "diag": 0.3559, "eoc": 0.59, "att": 0.87, "mission": 0.9, "trust": 1.0, "practice": 2794.0, "corr": 0.262, "exit": 0.64, "temp": 0.88, "name": "Tariq Al-Shammari"}, {"id": 648908, "school": "School C", "fac": 369, "level": "L2", "diag": 0.5508, "eoc": 0.68, "att": 0.84, "mission": 0.0, "trust": 1.0, "practice": 500.0, "corr": 0.43, "exit": 0.7, "temp": 1.0, "name": "Naif Al-Omar"}, {"id": 648909, "school": "School C", "fac": 369, "level": "L2", "diag": 0.5763, "eoc": 0.73, "att": 0.82, "mission": 0.7, "trust": 0.88, "practice": 1823.0, "corr": 0.53, "exit": 0.74, "temp": 0.88, "name": "Basel Al-Asiri"}, {"id": 648910, "school": "School C", "fac": 384, "level": "L1", "diag": 0.4746, "eoc": 0.7, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 1701.0, "corr": 0.617, "exit": 0.75, "temp": 0.96, "name": "Sami Al-Zahrani"}, {"id": 648912, "school": "School C", "fac": 384, "level": "L2", "diag": 0.6186, "eoc": 0.75, "att": 0.83, "mission": 1.0, "trust": 1.0, "practice": 1817.0, "corr": 0.617, "exit": 0.74, "temp": 0.96, "name": "Zaid Al-Rashidi"}, {"id": 648913, "school": "School C", "fac": 369, "level": "L2", "diag": 0.5593, "eoc": 0.67, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2125.0, "corr": 0.552, "exit": 0.72, "temp": 0.99, "name": "Suhail Al-Mansour"}, {"id": 648945, "school": "School C", "fac": 368, "level": "L1", "diag": 0.5763, "eoc": 0.63, "att": 0.88, "mission": 1.0, "trust": 1.0, "practice": 1905.0, "corr": 0.44, "exit": 0.65, "temp": 1.0, "name": "Faisal Al-Zahrani"}, {"id": 648947, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4915, "eoc": 0.72, "att": 0.98, "mission": 1.0, "trust": 0.75, "practice": 1833.0, "corr": 0.428, "exit": 0.64, "temp": 0.95, "name": "Abdullah Al-Tamimi"}, {"id": 648956, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4831, "eoc": 0.69, "att": 0.94, "mission": 1.0, "trust": 0.8, "practice": 2349.0, "corr": 0.305, "exit": 0.59, "temp": 0.69, "name": "Hamad Al-Shammari"}, {"id": 648957, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3898, "eoc": 0.62, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 1850.0, "corr": 0.387, "exit": 0.53, "temp": 0.92, "name": "Naif Al-Ghamdi"}, {"id": 651213, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3559, "eoc": 0.56, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 1366.0, "corr": 0.3, "exit": 0.57, "temp": 0.61, "name": "Yousef Al-Omar"}, {"id": 651217, "school": "School C", "fac": 369, "level": "L1", "diag": 0.5169, "eoc": 0.61, "att": 0.8, "mission": 1.0, "trust": 1.0, "practice": 2275.0, "corr": 0.375, "exit": 0.63, "temp": 0.99, "name": "Mansour Al-Nasser"}, {"id": 651218, "school": "School C", "fac": 369, "level": "L1", "diag": 0.4492, "eoc": 0.61, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 4710.0, "corr": 0.253, "exit": 0.59, "temp": 0.5, "name": "Maan Al-Rashidi"}, {"id": 651219, "school": "School C", "fac": 369, "level": "L2", "diag": 0.5508, "eoc": 0.79, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 2723.0, "corr": 0.538, "exit": 0.81, "temp": 0.98, "name": "Yousef Al-Saleh"}, {"id": 651220, "school": "School C", "fac": 384, "level": "L2", "diag": 0.5847, "eoc": 0.57, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 4204.0, "corr": 0.317, "exit": 0.74, "temp": 0.85, "name": "Marwan Al-Shammari"}, {"id": 651221, "school": "School C", "fac": 369, "level": "L1", "diag": 0.5, "eoc": 0.71, "att": 0.8, "mission": 0.6, "trust": 1.0, "practice": 3450.0, "corr": 0.308, "exit": 0.68, "temp": 1.0, "name": "Rashid Al-Maliki"}, {"id": 651222, "school": "School C", "fac": 384, "level": "L1", "diag": 0.4576, "eoc": 0.69, "att": 0.74, "mission": 1.0, "trust": 1.0, "practice": 2161.0, "corr": 0.333, "exit": 0.68, "temp": 0.94, "name": "Bandar Al-Mutairi"}, {"id": 651223, "school": "School C", "fac": 369, "level": "L1", "diag": 0.3729, "eoc": 0.6, "att": 0.73, "mission": 0.9, "trust": 0.83, "practice": 2749.0, "corr": 0.318, "exit": 0.71, "temp": 0.88, "name": "Turki Al-Zahrani"}, {"id": 651224, "school": "School C", "fac": 384, "level": "L1", "diag": 0.4831, "eoc": 0.72, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 2103.0, "corr": 0.46, "exit": 0.83, "temp": 1.0, "name": "Ghazi Al-Faraj"}, {"id": 651225, "school": "School C", "fac": 384, "level": "L1", "diag": 0.5254, "eoc": 0.64, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 3004.0, "corr": 0.413, "exit": 0.7, "temp": 0.92, "name": "Adel Al-Mutairi"}, {"id": 651226, "school": "School C", "fac": 369, "level": "L2", "diag": 0.678, "eoc": 0.79, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2479.0, "corr": 0.614, "exit": 0.79, "temp": 0.99, "name": "Ghazi Al-Hamdan"}, {"id": 651228, "school": "School C", "fac": 369, "level": "L2", "diag": 0.6102, "eoc": 0.88, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1731.0, "corr": 0.716, "exit": 0.76, "temp": 0.91, "name": "Hussain Al-Nasser"}, {"id": 651229, "school": "School C", "fac": 369, "level": "L1", "diag": 0.3559, "eoc": 0.56, "att": 0.94, "mission": 0.6, "trust": 1.0, "practice": 1296.0, "corr": 0.342, "exit": 0.64, "temp": 0.96, "name": "Hatim Al-Shammari"}, {"id": 651230, "school": "School C", "fac": 369, "level": "L2", "diag": 0.5932, "eoc": 0.79, "att": 0.88, "mission": 0.7, "trust": 1.0, "practice": 1074.0, "corr": 0.576, "exit": 0.77, "temp": 0.54, "name": "Badr Al-Zahrani"}, {"id": 651231, "school": "School C", "fac": 384, "level": "L1", "diag": 0.3814, "eoc": 0.64, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2674.0, "corr": 0.374, "exit": 0.67, "temp": 0.98, "name": "Turki Al-Balawi"}, {"id": 651232, "school": "School C", "fac": 369, "level": "L2", "diag": 0.7203, "eoc": 0.74, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 2367.0, "corr": 0.55, "exit": 0.8, "temp": 0.97, "name": "Marwan Al-Ghamdi"}, {"id": 651233, "school": "School C", "fac": 384, "level": "L1", "diag": 0.4492, "eoc": 0.56, "att": 0.72, "mission": 0.7, "trust": 1.0, "practice": 1251.0, "corr": 0.361, "exit": 0.7, "temp": 1.0, "name": "Fawaz Al-Qahtani"}, {"id": 651234, "school": "School C", "fac": 384, "level": "L1", "diag": 0.5, "eoc": 0.72, "att": 0.83, "mission": 0.8, "trust": 1.0, "practice": 1319.0, "corr": 0.437, "exit": 0.65, "temp": 0.9, "name": "Sultan Al-Shehri"}, {"id": 651236, "school": "School C", "fac": 384, "level": "L1", "diag": 0.5085, "eoc": 0.6, "att": 0.9, "mission": 1.0, "trust": 0.88, "practice": 1790.0, "corr": 0.465, "exit": 0.7, "temp": 0.97, "name": "Basel Al-Dossari"}, {"id": 651237, "school": "School C", "fac": 384, "level": "L1", "diag": 0.4661, "eoc": 0.69, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 2202.0, "corr": 0.489, "exit": 0.75, "temp": 1.0, "name": "Zaid Al-Juhani"}, {"id": 651238, "school": "School C", "fac": 369, "level": "L1", "diag": 0.5508, "eoc": 0.73, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2343.0, "corr": 0.533, "exit": 0.66, "temp": 0.67, "name": "Raed Al-Ghamdi"}, {"id": 651239, "school": "School C", "fac": 384, "level": "L1", "diag": 0.4831, "eoc": 0.63, "att": 0.96, "mission": 1.0, "trust": 0.91, "practice": 3603.0, "corr": 0.5, "exit": 0.6, "temp": 0.97, "name": "Mishaal Al-Shammari"}, {"id": 651241, "school": "School C", "fac": 384, "level": "L2", "diag": 0.6271, "eoc": 0.7, "att": 0.89, "mission": 1.0, "trust": 1.0, "practice": 1585.0, "corr": 0.506, "exit": 0.74, "temp": 0.92, "name": "Raed Al-Maliki"}, {"id": 652887, "school": "School C", "fac": 368, "level": "L1", "diag": 0.2627, "eoc": 0.45, "att": 0.94, "mission": 0.4, "trust": 1.0, "practice": 2224.0, "corr": 0.304, "exit": 0.58, "temp": 0.95, "name": "Nasser Al-Mutairi"}, {"id": 652888, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4831, "eoc": 0.67, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 1941.0, "corr": 0.284, "exit": 0.66, "temp": 0.85, "name": "Sami Al-Habib"}, {"id": 652892, "school": "School C", "fac": 369, "level": "L1", "diag": 0.3559, "eoc": 0.63, "att": 0.76, "mission": 0.9, "trust": 1.0, "practice": 2624.0, "corr": 0.302, "exit": 0.67, "temp": 0.0, "name": "Abdulrahman Al-Yami"}, {"id": 652893, "school": "School C", "fac": 384, "level": "L1", "diag": 0.3475, "eoc": 0.62, "att": 0.85, "mission": 0.7, "trust": 1.0, "practice": 1207.0, "corr": 0.418, "exit": 0.6, "temp": 0.97, "name": "Tameem Al-Otaibi"}, {"id": 653177, "school": "School C", "fac": 384, "level": "L1", "diag": 0.4746, "eoc": 0.62, "att": 0.79, "mission": 1.0, "trust": 1.0, "practice": 2640.0, "corr": 0.426, "exit": 0.68, "temp": 1.0, "name": "Zaid Al-Nasser"}, {"id": 657382, "school": "School C", "fac": 368, "level": "L1", "diag": 0.4492, "eoc": 0.65, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 2010.0, "corr": 0.297, "exit": 0.61, "temp": 0.73, "name": "Adel Al-Mansour"}, {"id": 667157, "school": "School C", "fac": 369, "level": "L1", "diag": 0.5, "eoc": 0.62, "att": 0.88, "mission": 1.0, "trust": 1.0, "practice": 1839.0, "corr": 0.37, "exit": 0.7, "temp": 0.57, "name": "Naif Al-Mansour"}, {"id": 668693, "school": "School C", "fac": 369, "level": "L1", "diag": 0.3983, "eoc": 0.52, "att": 0.89, "mission": 1.0, "trust": 1.0, "practice": 2374.0, "corr": 0.376, "exit": 0.61, "temp": 0.98, "name": "Rashid Al-Rashidi"}, {"id": 676574, "school": "School C", "fac": 368, "level": "L1", "diag": 0.3305, "eoc": 0.71, "att": 0.68, "mission": 0.6, "trust": null, "practice": 740.0, "corr": 0.565, "exit": 0.7, "temp": 0.94, "name": "Sultan Al-Subaie"}, {"id": 647318, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3898, "eoc": 0.57, "att": 0.96, "mission": 0.6, "trust": 1.0, "practice": 908.0, "corr": 0.534, "exit": 0.7, "temp": 0.75, "name": "Hussain Al-Dossari"}, {"id": 647319, "school": "School D", "fac": 503, "level": "L1", "diag": 0.3644, "eoc": 0.49, "att": 0.5, "mission": 1.0, "trust": 1.0, "practice": 2752.0, "corr": 0.309, "exit": 0.5, "temp": 0.91, "name": "Tariq Al-Saud"}, {"id": 647320, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5085, "eoc": 0.69, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 2611.0, "corr": 0.401, "exit": 0.71, "temp": 0.75, "name": "Tameem Al-Nasser"}, {"id": 647321, "school": "School D", "fac": 337, "level": "L1", "diag": 0.4492, "eoc": 0.65, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 1788.0, "corr": 0.425, "exit": 0.69, "temp": 0.98, "name": "Tameem Al-Mutairi"}, {"id": 647322, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5085, "eoc": 0.64, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2774.0, "corr": 0.426, "exit": 0.67, "temp": 0.87, "name": "Fares Al-Mansour"}, {"id": 647324, "school": "School D", "fac": 337, "level": "L1", "diag": 0.4237, "eoc": 0.65, "att": 0.82, "mission": 0.1, "trust": 0.67, "practice": 2299.0, "corr": 0.269, "exit": 0.68, "temp": 0.79, "name": "Majed Al-Balawi"}, {"id": 647325, "school": "School D", "fac": 337, "level": "L1", "diag": 0.3983, "eoc": 0.61, "att": 0.79, "mission": 0.2, "trust": 0.67, "practice": 4237.0, "corr": 0.273, "exit": 0.59, "temp": 0.91, "name": "Fahad Al-Habib"}, {"id": 647326, "school": "School D", "fac": 337, "level": "L1", "diag": 0.4576, "eoc": 0.83, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 2274.0, "corr": 0.446, "exit": 0.81, "temp": 0.75, "name": "Basel Al-Subaie"}, {"id": 647327, "school": "School D", "fac": 503, "level": "L1", "diag": 0.3983, "eoc": 0.64, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 1292.0, "corr": 0.46, "exit": 0.66, "temp": 0.82, "name": "Basel Al-Balawi"}, {"id": 647328, "school": "School D", "fac": 503, "level": "L1", "diag": 0.4576, "eoc": 0.59, "att": 0.88, "mission": 1.0, "trust": 1.0, "practice": 3097.0, "corr": 0.435, "exit": 0.67, "temp": 0.77, "name": "Raed Al-Harbi"}, {"id": 647329, "school": "School D", "fac": 337, "level": "L1", "diag": 0.2458, "eoc": 0.3, "att": 1.0, "mission": 0.6, "trust": 0.78, "practice": 2586.0, "corr": 0.251, "exit": 0.55, "temp": 0.78, "name": "Bandar Al-Anazi"}, {"id": 647331, "school": "School D", "fac": 503, "level": "L1", "diag": 0.3983, "eoc": 0.44, "att": 0.91, "mission": 1.0, "trust": 1.0, "practice": 1900.0, "corr": 0.452, "exit": 0.61, "temp": 0.65, "name": "Fawaz Al-Dossari"}, {"id": 647332, "school": "School D", "fac": 337, "level": "L1", "diag": 0.4237, "eoc": 0.58, "att": 0.96, "mission": 0.2, "trust": 1.0, "practice": 1831.0, "corr": 0.315, "exit": 0.69, "temp": 0.94, "name": "Adel Al-Mansour"}, {"id": 647333, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5424, "eoc": 0.79, "att": 0.96, "mission": 1.0, "trust": 0.9, "practice": 2872.0, "corr": 0.544, "exit": 0.74, "temp": 0.95, "name": "Nasser Al-Omar"}, {"id": 647334, "school": "School D", "fac": 388, "level": "L1", "diag": 0.2627, "eoc": 0.51, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 1293.0, "corr": 0.264, "exit": 0.64, "temp": 0.6, "name": "Abdulrahman Al-Najjar"}, {"id": 647335, "school": "School D", "fac": 388, "level": "L1", "diag": 0.4237, "eoc": 0.51, "att": 0.94, "mission": 1.0, "trust": null, "practice": 302.0, "corr": 0.331, "exit": 0.52, "temp": 1.0, "name": "Hamad Al-Amri"}, {"id": 647336, "school": "School D", "fac": 503, "level": "L1", "diag": 0.4576, "eoc": 0.68, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 1410.0, "corr": 0.55, "exit": 0.66, "temp": 0.87, "name": "Mohammed Al-Otaibi"}, {"id": 647337, "school": "School D", "fac": 337, "level": "L1", "diag": 0.4746, "eoc": 0.74, "att": 0.98, "mission": 0.8, "trust": 0.9, "practice": 2111.0, "corr": 0.529, "exit": 0.8, "temp": 0.97, "name": "Badr Al-Nasser"}, {"id": 647339, "school": "School D", "fac": 337, "level": "L1", "diag": 0.4407, "eoc": 0.59, "att": 0.85, "mission": 0.7, "trust": 1.0, "practice": 2752.0, "corr": 0.336, "exit": 0.62, "temp": 0.74, "name": "Ziyad Al-Zahrani"}, {"id": 647340, "school": "School D", "fac": 337, "level": "L1", "diag": 0.2627, "eoc": 0.62, "att": 0.96, "mission": 0.9, "trust": 1.0, "practice": 2794.0, "corr": 0.398, "exit": 0.71, "temp": 0.99, "name": "Faisal Al-Zahrani"}, {"id": 647341, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5763, "eoc": 0.7, "att": 0.96, "mission": 1.0, "trust": 0.89, "practice": 1985.0, "corr": 0.497, "exit": 0.79, "temp": 0.83, "name": "Mansour Al-Ghamdi"}, {"id": 647342, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3475, "eoc": 0.52, "att": 1.0, "mission": 0.8, "trust": 0.92, "practice": 1534.0, "corr": 0.35, "exit": 0.73, "temp": 0.67, "name": "Khalid Al-Khaldi"}, {"id": 647343, "school": "School D", "fac": 337, "level": "L1", "diag": 0.4237, "eoc": 0.59, "att": 0.86, "mission": 0.0, "trust": 1.0, "practice": 819.0, "corr": 0.386, "exit": 0.61, "temp": 0.94, "name": "Marwan Al-Sulaiman"}, {"id": 647344, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5678, "eoc": 0.83, "att": 0.84, "mission": 0.9, "trust": 1.0, "practice": 2456.0, "corr": 0.647, "exit": 0.75, "temp": 0.97, "name": "Saud Al-Mansour"}, {"id": 647346, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5339, "eoc": 0.79, "att": 0.92, "mission": 0.1, "trust": 0.86, "practice": 1933.0, "corr": 0.398, "exit": 0.73, "temp": 0.96, "name": "Adel Al-Mansour"}, {"id": 647348, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3559, "eoc": 0.48, "att": 0.92, "mission": 0.5, "trust": 1.0, "practice": 746.0, "corr": 0.386, "exit": 0.64, "temp": 0.62, "name": "Turki Al-Shehri"}, {"id": 647349, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3983, "eoc": 0.59, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2814.0, "corr": 0.488, "exit": 0.5, "temp": 0.3, "name": "Saif Al-Amri"}, {"id": 647350, "school": "School D", "fac": 388, "level": "L1", "diag": 0.4407, "eoc": 0.58, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 950.0, "corr": 0.308, "exit": 0.6, "temp": 0.88, "name": "Sami Al-Dossari"}, {"id": 647351, "school": "School D", "fac": 336, "level": "L2", "diag": 0.5085, "eoc": 0.65, "att": 0.98, "mission": 0.9, "trust": 1.0, "practice": 2221.0, "corr": 0.572, "exit": 0.73, "temp": 0.66, "name": "Salman Al-Balawi"}, {"id": 647352, "school": "School D", "fac": 336, "level": "L1", "diag": 0.4831, "eoc": 0.73, "att": 0.94, "mission": 0.4, "trust": 1.0, "practice": 1776.0, "corr": 0.542, "exit": 0.73, "temp": 0.99, "name": "Raed Al-Juhani"}, {"id": 648840, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5, "eoc": 0.77, "att": 0.89, "mission": 1.0, "trust": 1.0, "practice": 1665.0, "corr": 0.58, "exit": 0.81, "temp": 1.0, "name": "Yousef Al-Omar"}, {"id": 648842, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3559, "eoc": 0.33, "att": 0.92, "mission": 0.9, "trust": 1.0, "practice": 1022.0, "corr": 0.302, "exit": 0.58, "temp": 0.6, "name": "Adel Al-Mansour"}, {"id": 648843, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3644, "eoc": 0.73, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1327.0, "corr": 0.605, "exit": 0.82, "temp": 0.48, "name": "Tameem Al-Asiri"}, {"id": 648844, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5508, "eoc": 0.69, "att": 0.98, "mission": 0.8, "trust": 1.0, "practice": 2010.0, "corr": 0.462, "exit": 0.81, "temp": 0.98, "name": "Omar Al-Asiri"}, {"id": 648845, "school": "School D", "fac": 337, "level": "L1", "diag": 0.2712, "eoc": 0.51, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 2475.0, "corr": 0.288, "exit": 0.61, "temp": 0.92, "name": "Ziyad Al-Shammari"}, {"id": 648921, "school": "School D", "fac": 336, "level": "L1", "diag": 0.3305, "eoc": 0.42, "att": 0.81, "mission": 1.0, "trust": 0.89, "practice": 3934.0, "corr": 0.301, "exit": 0.62, "temp": 0.23, "name": "Saif Al-Saleh"}, {"id": 651260, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3559, "eoc": 0.6, "att": 0.84, "mission": 1.0, "trust": 1.0, "practice": 1728.0, "corr": 0.403, "exit": 0.6, "temp": 0.68, "name": "Badr Al-Maliki"}, {"id": 651263, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3559, "eoc": 0.48, "att": 0.88, "mission": 0.7, "trust": 1.0, "practice": 1020.0, "corr": 0.275, "exit": 0.48, "temp": 0.81, "name": "Nasser Al-Maliki"}, {"id": 651267, "school": "School D", "fac": 336, "level": "L1", "diag": 0.3644, "eoc": 0.63, "att": 0.92, "mission": 0.7, "trust": 1.0, "practice": 4330.0, "corr": 0.416, "exit": 0.68, "temp": 0.42, "name": "Sultan Al-Zahrani"}, {"id": 652826, "school": "School D", "fac": 337, "level": "L1", "diag": 0.5339, "eoc": 0.89, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 1873.0, "corr": 0.625, "exit": 0.87, "temp": 0.92, "name": "Ibrahim Al-Ghamdi"}, {"id": 652827, "school": "School D", "fac": 503, "level": "L1", "diag": 0.2881, "eoc": 0.42, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 2055.0, "corr": 0.387, "exit": 0.58, "temp": 0.92, "name": "Rakan Al-Saud"}, {"id": 652828, "school": "School D", "fac": 388, "level": "L1", "diag": 0.4831, "eoc": 0.67, "att": 0.9, "mission": 0.9, "trust": 0.5, "practice": 1237.0, "corr": 0.347, "exit": 0.64, "temp": 0.68, "name": "Hatim Al-Faraj"}, {"id": 652829, "school": "School D", "fac": 503, "level": "L1", "diag": 0.5169, "eoc": 0.71, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 2105.0, "corr": 0.568, "exit": 0.67, "temp": 0.91, "name": "Ibrahim Al-Hamdan"}, {"id": 652830, "school": "School D", "fac": 503, "level": "L2", "diag": 0.6017, "eoc": 0.74, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 1812.0, "corr": 0.636, "exit": 0.72, "temp": 0.98, "name": "Ibrahim Al-Saud"}, {"id": 652831, "school": "School D", "fac": 503, "level": "L2", "diag": 0.4915, "eoc": 0.71, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 3142.0, "corr": 0.544, "exit": 0.72, "temp": 0.93, "name": "Saud Al-Asiri"}, {"id": 652832, "school": "School D", "fac": 503, "level": "L1", "diag": 0.3814, "eoc": 0.65, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 3247.0, "corr": 0.477, "exit": 0.66, "temp": 1.0, "name": "Basel Al-Qahtani"}, {"id": 652833, "school": "School D", "fac": 388, "level": "L1", "diag": 0.4746, "eoc": 0.67, "att": 1.0, "mission": 1.0, "trust": 0.91, "practice": 1530.0, "corr": 0.403, "exit": 0.73, "temp": 0.08, "name": "Ibrahim Al-Ghamdi"}, {"id": 652834, "school": "School D", "fac": 388, "level": "L1", "diag": 0.4068, "eoc": 0.63, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 1873.0, "corr": 0.494, "exit": 0.72, "temp": 0.76, "name": "Abdullah Al-Habib"}, {"id": 652835, "school": "School D", "fac": 503, "level": "L1", "diag": 0.4237, "eoc": 0.65, "att": 0.9, "mission": 1.0, "trust": 0.78, "practice": 2852.0, "corr": 0.43, "exit": 0.68, "temp": 0.79, "name": "Rakan Al-Ghamdi"}, {"id": 652836, "school": "School D", "fac": 503, "level": "L1", "diag": 0.4237, "eoc": 0.61, "att": 0.82, "mission": 1.0, "trust": 1.0, "practice": 1534.0, "corr": 0.561, "exit": 0.77, "temp": 0.81, "name": "Fares Al-Zahrani"}, {"id": 652837, "school": "School D", "fac": 503, "level": "L1", "diag": 0.4492, "eoc": 0.65, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1725.0, "corr": 0.464, "exit": 0.68, "temp": 1.0, "name": "Naif Al-Yami"}, {"id": 653165, "school": "School D", "fac": 336, "level": "L1", "diag": 0.5932, "eoc": 0.68, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 2173.0, "corr": 0.488, "exit": 0.78, "temp": 0.72, "name": "Marwan Al-Harbi"}, {"id": 653166, "school": "School D", "fac": 336, "level": "L1", "diag": 0.3559, "eoc": 0.68, "att": 0.9, "mission": 0.5, "trust": 1.0, "practice": 1961.0, "corr": 0.513, "exit": 0.59, "temp": 0.9, "name": "Adel Al-Shehri"}, {"id": 653167, "school": "School D", "fac": 336, "level": "L2", "diag": 0.4915, "eoc": 0.64, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 2112.0, "corr": 0.456, "exit": 0.69, "temp": 0.81, "name": "Tameem Al-Omar"}, {"id": 657384, "school": "School D", "fac": 388, "level": "L1", "diag": 0.4407, "eoc": 0.62, "att": 0.88, "mission": 0.2, "trust": null, "practice": 1434.0, "corr": 0.388, "exit": 0.53, "temp": 0.73, "name": "Mansour Al-Hamdan"}, {"id": 657386, "school": "School D", "fac": 503, "level": "L1", "diag": 0.4576, "eoc": 0.71, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 6479.0, "corr": 0.693, "exit": 0.76, "temp": 1.0, "name": "Ammar Al-Zahrani"}, {"id": 657387, "school": "School D", "fac": 388, "level": "L1", "diag": 0.3475, "eoc": 0.37, "att": 0.97, "mission": 1.0, "trust": 1.0, "practice": 2276.0, "corr": 0.283, "exit": 0.51, "temp": 0.75, "name": "Ammar Al-Tamimi"}, {"id": 657388, "school": "School D", "fac": 503, "level": "L1", "diag": 0.4068, "eoc": 0.41, "att": 0.84, "mission": 1.0, "trust": 1.0, "practice": 3264.0, "corr": 0.584, "exit": 0.69, "temp": 0.67, "name": "Hassan Al-Harbi"}, {"id": 657389, "school": "School D", "fac": 503, "level": "L1", "diag": 0.2627, "eoc": 0.55, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 1890.0, "corr": 0.561, "exit": 0.65, "temp": 0.73, "name": "Fahad Al-Otaibi"}, {"id": 657390, "school": "School D", "fac": 503, "level": "L1", "diag": 0.4322, "eoc": 0.66, "att": 0.81, "mission": 1.0, "trust": 1.0, "practice": 1786.0, "corr": 0.401, "exit": 0.67, "temp": 0.97, "name": "Saif Al-Juhani"}, {"id": 657391, "school": "School D", "fac": 503, "level": "L1", "diag": 0.339, "eoc": 0.53, "att": 0.83, "mission": 1.0, "trust": 1.0, "practice": 1154.0, "corr": 0.378, "exit": 0.5, "temp": 0.99, "name": "Waleed Al-Juhani"}, {"id": 657392, "school": "School D", "fac": 503, "level": "L1", "diag": 0.3305, "eoc": 0.53, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1071.0, "corr": 0.432, "exit": 0.58, "temp": 0.75, "name": "Hassan Al-Maliki"}, {"id": 659235, "school": "School D", "fac": 503, "level": "L1", "diag": 0.3559, "eoc": 0.55, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 1285.0, "corr": 0.429, "exit": 0.64, "temp": null, "name": "Tameem Al-Qahtani"}, {"id": 659350, "school": "School D", "fac": 336, "level": "L1", "diag": 0.4661, "eoc": 0.73, "att": 0.75, "mission": 0.6, "trust": 1.0, "practice": 2372.0, "corr": 0.561, "exit": 0.77, "temp": 0.93, "name": "Zaid Al-Saleh"}, {"id": 660101, "school": "School D", "fac": 337, "level": "L1", "diag": 0.322, "eoc": 0.64, "att": 0.87, "mission": 0.9, "trust": 1.0, "practice": 2098.0, "corr": 0.429, "exit": 0.73, "temp": 0.85, "name": "Rashid Al-Otaibi"}, {"id": 688818, "school": "School D", "fac": 336, "level": "L1", "diag": 0.4153, "eoc": 0.6, "att": 1.0, "mission": 0.2, "trust": 1.0, "practice": 180.0, "corr": 0.628, "exit": 0.78, "temp": 1.0, "name": "Faisal Al-Shammari"}, {"id": 647355, "school": "School B", "fac": 425, "level": "L1", "diag": 0.2881, "eoc": 0.44, "att": 0.79, "mission": 1.0, "trust": 1.0, "practice": 1689.0, "corr": 0.33, "exit": 0.58, "temp": 0.95, "name": "Tameem Al-Rashidi"}, {"id": 647356, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4068, "eoc": 0.64, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2404.0, "corr": 0.433, "exit": 0.77, "temp": 0.81, "name": "Fahad Al-Zahrani"}, {"id": 647357, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4915, "eoc": 0.78, "att": 0.75, "mission": 1.0, "trust": 1.0, "practice": 2059.0, "corr": 0.73, "exit": 0.77, "temp": 0.95, "name": "Omar Al-Harbi"}, {"id": 647359, "school": "School B", "fac": 334, "level": "L1", "diag": 0.3136, "eoc": 0.57, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 1314.0, "corr": 0.521, "exit": 0.67, "temp": 0.83, "name": "Adel Al-Maliki"}, {"id": 647361, "school": "School B", "fac": 425, "level": "L1", "diag": 0.4407, "eoc": 0.63, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 3439.0, "corr": 0.713, "exit": 0.71, "temp": 0.95, "name": "Turki Al-Juhani"}, {"id": 647362, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4831, "eoc": 0.78, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 1615.0, "corr": 0.477, "exit": 0.72, "temp": 0.85, "name": "Majed Al-Mutairi"}, {"id": 647363, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4153, "eoc": 0.6, "att": 0.87, "mission": 1.0, "trust": 1.0, "practice": 1463.0, "corr": 0.625, "exit": 0.72, "temp": 0.63, "name": "Tariq Al-Zahrani"}, {"id": 647364, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4068, "eoc": 0.75, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 1872.0, "corr": 0.429, "exit": 0.75, "temp": 0.96, "name": "Saud Al-Maliki"}, {"id": 647365, "school": "School B", "fac": 334, "level": "L1", "diag": 0.339, "eoc": 0.61, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 1524.0, "corr": 0.465, "exit": 0.71, "temp": 0.73, "name": "Sami Al-Otaibi"}, {"id": 647366, "school": "School B", "fac": 502, "level": "L1", "diag": 0.3898, "eoc": 0.69, "att": 0.73, "mission": 1.0, "trust": 1.0, "practice": 2086.0, "corr": 0.587, "exit": 0.68, "temp": 0.85, "name": "Faisal Al-Saleh"}, {"id": 647367, "school": "School B", "fac": 334, "level": "L1", "diag": 0.3814, "eoc": 0.66, "att": 0.75, "mission": 1.0, "trust": 1.0, "practice": 1893.0, "corr": 0.56, "exit": 0.71, "temp": 0.82, "name": "Adel Al-Sulaiman"}, {"id": 647368, "school": "School B", "fac": 425, "level": "L1", "diag": 0.4153, "eoc": 0.64, "att": 0.87, "mission": 1.0, "trust": 1.0, "practice": 2947.0, "corr": 0.525, "exit": 0.74, "temp": 0.89, "name": "Abdulrahman Al-Ghamdi"}, {"id": 647369, "school": "School B", "fac": 334, "level": "L1", "diag": 0.3814, "eoc": 0.64, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 2050.0, "corr": 0.423, "exit": 0.77, "temp": 0.9, "name": "Fawaz Al-Habib"}, {"id": 647370, "school": "School B", "fac": 334, "level": "L1", "diag": 0.5254, "eoc": 0.65, "att": 0.87, "mission": 1.0, "trust": 1.0, "practice": 1776.0, "corr": 0.582, "exit": 0.8, "temp": 0.7, "name": "Saad Al-Dossari"}, {"id": 647371, "school": "School B", "fac": 334, "level": "L1", "diag": 0.3051, "eoc": 0.51, "att": 0.79, "mission": 1.0, "trust": 0.91, "practice": 1807.0, "corr": 0.567, "exit": 0.61, "temp": 0.59, "name": "Hassan Al-Amri"}, {"id": 647372, "school": "School B", "fac": 502, "level": "L2", "diag": 0.6271, "eoc": 0.72, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 2515.0, "corr": 0.635, "exit": 0.82, "temp": 0.97, "name": "Ammar Al-Harbi"}, {"id": 647373, "school": "School B", "fac": 502, "level": "L1", "diag": 0.2881, "eoc": 0.42, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 2916.0, "corr": 0.572, "exit": 0.72, "temp": 0.97, "name": "Anas Al-Nasser"}, {"id": 647374, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4237, "eoc": 0.63, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 1970.0, "corr": 0.616, "exit": 0.78, "temp": 0.91, "name": "Faisal Al-Dossari"}, {"id": 647375, "school": "School B", "fac": 334, "level": "L1", "diag": 0.3136, "eoc": 0.64, "att": 0.94, "mission": 1.0, "trust": 0.82, "practice": 1868.0, "corr": 0.539, "exit": 0.7, "temp": 0.45, "name": "Mishaal Al-Saud"}, {"id": 647377, "school": "School B", "fac": 425, "level": "L2", "diag": 0.4746, "eoc": 0.8, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 2424.0, "corr": 0.718, "exit": 0.8, "temp": 0.95, "name": "Mishaal Al-Mutairi"}, {"id": 647378, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4492, "eoc": 0.64, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 1508.0, "corr": 0.743, "exit": 0.81, "temp": 0.99, "name": "Tariq Al-Subaie"}, {"id": 647379, "school": "School B", "fac": 334, "level": "L1", "diag": 0.6441, "eoc": 0.86, "att": 0.82, "mission": 1.0, "trust": 1.0, "practice": 2056.0, "corr": 0.791, "exit": 0.89, "temp": 0.95, "name": "Hussain Al-Asiri"}, {"id": 647380, "school": "School B", "fac": 425, "level": "L1", "diag": 0.4661, "eoc": 0.67, "att": 0.92, "mission": 0.9, "trust": 1.0, "practice": 2211.0, "corr": 0.553, "exit": 0.67, "temp": 0.83, "name": "Tameem Al-Tamimi"}, {"id": 647382, "school": "School B", "fac": 425, "level": "L1", "diag": 0.4153, "eoc": 0.74, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 1846.0, "corr": 0.672, "exit": 0.79, "temp": 0.95, "name": "Sami Al-Yami"}, {"id": 647383, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3814, "eoc": 0.51, "att": 0.7, "mission": 0.9, "trust": 1.0, "practice": 5153.0, "corr": 0.42, "exit": 0.63, "temp": 0.74, "name": "Maan Al-Amri"}, {"id": 647384, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3729, "eoc": 0.49, "att": 0.69, "mission": 1.0, "trust": 0.83, "practice": 1582.0, "corr": 0.513, "exit": 0.7, "temp": 0.63, "name": "Bandar Al-Harbi"}, {"id": 647385, "school": "School B", "fac": 335, "level": "L1", "diag": 0.4237, "eoc": 0.73, "att": 0.67, "mission": 1.0, "trust": 1.0, "practice": 3269.0, "corr": 0.623, "exit": 0.78, "temp": 0.5, "name": "Talal Al-Harbi"}, {"id": 647387, "school": "School B", "fac": 335, "level": "L1", "diag": 0.4322, "eoc": 0.58, "att": 0.74, "mission": 1.0, "trust": 0.8, "practice": 3258.0, "corr": 0.307, "exit": 0.62, "temp": 0.43, "name": "Faisal Al-Hamdan"}, {"id": 647388, "school": "School B", "fac": 335, "level": "L1", "diag": 0.6102, "eoc": 0.82, "att": 0.87, "mission": 1.0, "trust": 1.0, "practice": 2029.0, "corr": 0.565, "exit": 0.8, "temp": 0.81, "name": "Ghazi Al-Faraj"}, {"id": 647389, "school": "School B", "fac": 335, "level": "L1", "diag": 0.5508, "eoc": 0.74, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 1803.0, "corr": 0.524, "exit": 0.75, "temp": 0.88, "name": "Faisal Al-Khaldi"}, {"id": 647390, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3814, "eoc": 0.64, "att": 0.67, "mission": 1.0, "trust": 0.86, "practice": 6272.0, "corr": 0.297, "exit": 0.61, "temp": 0.6, "name": "Hamad Al-Qahtani"}, {"id": 647391, "school": "School B", "fac": 335, "level": "L1", "diag": 0.4068, "eoc": 0.59, "att": 0.75, "mission": 0.9, "trust": 1.0, "practice": 4634.0, "corr": 0.278, "exit": 0.62, "temp": 0.69, "name": "Faisal Al-Hamdan"}, {"id": 647392, "school": "School B", "fac": 335, "level": "L1", "diag": 0.4746, "eoc": 0.72, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 3516.0, "corr": 0.608, "exit": 0.76, "temp": 0.93, "name": "Ammar Al-Balawi"}, {"id": 647393, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3644, "eoc": 0.44, "att": 0.86, "mission": 1.0, "trust": 0.89, "practice": 4045.0, "corr": 0.383, "exit": 0.69, "temp": 0.9, "name": "Nasser Al-Dossari"}, {"id": 647394, "school": "School B", "fac": 335, "level": "L2", "diag": 0.6356, "eoc": 0.79, "att": 0.81, "mission": 1.0, "trust": 0.8, "practice": 2040.0, "corr": 0.634, "exit": 0.84, "temp": 0.9, "name": "Faisal Al-Balawi"}, {"id": 647395, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3559, "eoc": 0.37, "att": 0.92, "mission": 0.9, "trust": 1.0, "practice": 3840.0, "corr": 0.318, "exit": 0.68, "temp": 0.88, "name": "Khalid Al-Habib"}, {"id": 647396, "school": "School B", "fac": 335, "level": "L1", "diag": 0.2712, "eoc": 0.57, "att": 0.96, "mission": 1.0, "trust": 0.88, "practice": 2360.0, "corr": 0.487, "exit": 0.68, "temp": 0.68, "name": "Majed Al-Ghamdi"}, {"id": 647397, "school": "School B", "fac": 335, "level": "L1", "diag": 0.4492, "eoc": 0.77, "att": 0.81, "mission": 1.0, "trust": 1.0, "practice": 2584.0, "corr": 0.497, "exit": 0.74, "temp": 0.94, "name": "Raed Al-Ghamdi"}, {"id": 647398, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3729, "eoc": 0.57, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 3480.0, "corr": 0.378, "exit": 0.59, "temp": 0.95, "name": "Zaid Al-Habib"}, {"id": 647400, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3983, "eoc": 0.7, "att": 0.71, "mission": 0.8, "trust": 0.88, "practice": 6142.0, "corr": 0.32, "exit": 0.71, "temp": 0.87, "name": "Saad Al-Shammari"}, {"id": 647401, "school": "School B", "fac": 335, "level": "L1", "diag": 0.339, "eoc": 0.63, "att": 0.98, "mission": 0.9, "trust": 0.92, "practice": 1736.0, "corr": 0.526, "exit": 0.68, "temp": 0.6, "name": "Sultan Al-Nasser"}, {"id": 647402, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3644, "eoc": 0.67, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 4977.0, "corr": 0.366, "exit": 0.64, "temp": 0.9, "name": "Mansour Al-Zahrani"}, {"id": 648856, "school": "School B", "fac": 425, "level": "L1", "diag": 0.4407, "eoc": 0.68, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2097.0, "corr": 0.687, "exit": 0.73, "temp": 0.89, "name": "Hatim Al-Najjar"}, {"id": 648857, "school": "School B", "fac": 502, "level": "L1", "diag": 0.3898, "eoc": 0.49, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2763.0, "corr": 0.501, "exit": 0.7, "temp": 0.96, "name": "Abdullah Al-Najjar"}, {"id": 648858, "school": "School B", "fac": 502, "level": "L2", "diag": 0.7797, "eoc": 0.94, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 14694.0, "corr": 0.948, "exit": 0.86, "temp": 0.94, "name": "Khalid Al-Juhani"}, {"id": 648859, "school": "School B", "fac": 425, "level": "L1", "diag": 0.3814, "eoc": 0.57, "att": 0.93, "mission": 1.0, "trust": 1.0, "practice": 4372.0, "corr": 0.39, "exit": 0.73, "temp": 0.87, "name": "Saif Al-Hamdan"}, {"id": 648860, "school": "School B", "fac": 425, "level": "L1", "diag": 0.3475, "eoc": 0.62, "att": 0.93, "mission": 1.0, "trust": 1.0, "practice": 5052.0, "corr": 0.404, "exit": 0.69, "temp": 0.9, "name": "Mansour Al-Balawi"}, {"id": 648862, "school": "School B", "fac": 425, "level": "L1", "diag": 0.3475, "eoc": 0.61, "att": 0.94, "mission": 1.0, "trust": 0.86, "practice": 2920.0, "corr": 0.512, "exit": 0.68, "temp": 0.78, "name": "Hamad Al-Omar"}, {"id": 648863, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4746, "eoc": 0.83, "att": 0.91, "mission": 1.0, "trust": 1.0, "practice": 4862.0, "corr": 0.797, "exit": 0.76, "temp": 0.8, "name": "Salman Al-Harbi"}, {"id": 648864, "school": "School B", "fac": 425, "level": "L2", "diag": 0.6864, "eoc": 0.69, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 1732.0, "corr": 0.799, "exit": 0.8, "temp": 0.93, "name": "Saif Al-Asiri"}, {"id": 648865, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4068, "eoc": 0.55, "att": 0.96, "mission": 1.0, "trust": 0.91, "practice": 2619.0, "corr": 0.473, "exit": 0.76, "temp": 0.84, "name": "Hamad Al-Zahrani"}, {"id": 648866, "school": "School B", "fac": 425, "level": "L1", "diag": 0.4153, "eoc": 0.67, "att": 0.89, "mission": 1.0, "trust": 1.0, "practice": 3913.0, "corr": 0.355, "exit": 0.65, "temp": 0.8, "name": "Salman Al-Shammari"}, {"id": 648893, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3814, "eoc": 0.56, "att": 0.75, "mission": 0.8, "trust": 1.0, "practice": 1623.0, "corr": 0.282, "exit": 0.7, "temp": 0.78, "name": "Turki Al-Yami"}, {"id": 648894, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3898, "eoc": 0.56, "att": 0.74, "mission": 1.0, "trust": 0.83, "practice": 3221.0, "corr": 0.456, "exit": 0.63, "temp": 0.89, "name": "Rashid Al-Subaie"}, {"id": 648895, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3898, "eoc": 0.56, "att": 0.63, "mission": 1.0, "trust": 1.0, "practice": 2648.0, "corr": 0.366, "exit": 0.68, "temp": 0.84, "name": "Tariq Al-Rashidi"}, {"id": 648896, "school": "School B", "fac": 335, "level": "L1", "diag": 0.4746, "eoc": 0.6, "att": 0.7, "mission": 1.0, "trust": 1.0, "practice": 1720.0, "corr": 0.511, "exit": 0.66, "temp": 0.75, "name": "Fawaz Al-Omar"}, {"id": 648897, "school": "School B", "fac": 335, "level": "L1", "diag": 0.4831, "eoc": 0.7, "att": 0.82, "mission": 1.0, "trust": 1.0, "practice": 2005.0, "corr": 0.578, "exit": 0.81, "temp": 0.81, "name": "Saud Al-Saud"}, {"id": 648898, "school": "School B", "fac": 335, "level": "L2", "diag": 0.7288, "eoc": 0.88, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 2856.0, "corr": 0.782, "exit": 0.84, "temp": 0.88, "name": "Tariq Al-Najjar"}, {"id": 648899, "school": "School B", "fac": 335, "level": "L1", "diag": 0.5254, "eoc": 0.63, "att": 0.78, "mission": 1.0, "trust": 0.88, "practice": 2363.0, "corr": 0.449, "exit": 0.81, "temp": 0.91, "name": "Mansour Al-Otaibi"}, {"id": 648901, "school": "School B", "fac": 335, "level": "L1", "diag": 0.5424, "eoc": 0.81, "att": 0.94, "mission": 1.0, "trust": 0.8, "practice": 3045.0, "corr": 0.62, "exit": 0.74, "temp": 0.37, "name": "Saud Al-Faraj"}, {"id": 651245, "school": "School B", "fac": 425, "level": "L1", "diag": 0.322, "eoc": 0.61, "att": 0.8, "mission": 1.0, "trust": 1.0, "practice": 3143.0, "corr": 0.673, "exit": 0.74, "temp": 0.79, "name": "Yousef Al-Balawi"}, {"id": 651247, "school": "School B", "fac": 334, "level": "L1", "diag": 0.3898, "eoc": 0.56, "att": 0.91, "mission": 1.0, "trust": 1.0, "practice": 2349.0, "corr": 0.699, "exit": 0.69, "temp": 0.8, "name": "Salman Al-Shehri"}, {"id": 651248, "school": "School B", "fac": 334, "level": "L1", "diag": 0.3983, "eoc": 0.57, "att": 0.7, "mission": 1.0, "trust": 0.5, "practice": 815.0, "corr": 0.667, "exit": 0.65, "temp": 0.12, "name": "Waleed Al-Nasser"}, {"id": 651249, "school": "School B", "fac": 502, "level": "L1", "diag": 0.3305, "eoc": 0.72, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 8201.0, "corr": 0.822, "exit": 0.75, "temp": 0.63, "name": "Saud Al-Nasser"}, {"id": 651250, "school": "School B", "fac": 502, "level": "L1", "diag": 0.4407, "eoc": 0.62, "att": 0.83, "mission": 1.0, "trust": 1.0, "practice": 3967.0, "corr": 0.677, "exit": 0.72, "temp": 0.92, "name": "Saad Al-Anazi"}, {"id": 651251, "school": "School B", "fac": 502, "level": "L1", "diag": 0.3898, "eoc": 0.54, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 2414.0, "corr": 0.666, "exit": 0.66, "temp": 0.18, "name": "Talal Al-Dossari"}, {"id": 651252, "school": "School B", "fac": 502, "level": "L1", "diag": 0.4831, "eoc": 0.78, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2424.0, "corr": 0.712, "exit": 0.79, "temp": 0.83, "name": "Rayan Al-Sulaiman"}, {"id": 651253, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4237, "eoc": 0.61, "att": 0.89, "mission": 1.0, "trust": 0.91, "practice": 2356.0, "corr": 0.56, "exit": 0.74, "temp": 0.72, "name": "Adel Al-Asiri"}, {"id": 651254, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4237, "eoc": 0.57, "att": 0.79, "mission": 1.0, "trust": 1.0, "practice": 2054.0, "corr": 0.5, "exit": 0.63, "temp": 0.91, "name": "Ziyad Al-Najjar"}, {"id": 651255, "school": "School B", "fac": 425, "level": "L1", "diag": 0.4237, "eoc": 0.72, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 1661.0, "corr": 0.533, "exit": 0.72, "temp": 0.99, "name": "Rashid Al-Balawi"}, {"id": 651258, "school": "School B", "fac": 335, "level": "L1", "diag": 0.2966, "eoc": 0.55, "att": 0.75, "mission": 1.0, "trust": 1.0, "practice": 5564.0, "corr": 0.341, "exit": 0.78, "temp": 0.9, "name": "Abdulrahman Al-Yami"}, {"id": 652873, "school": "School B", "fac": 502, "level": "L2", "diag": 0.5508, "eoc": 0.78, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 1996.0, "corr": 0.721, "exit": 0.8, "temp": 0.93, "name": "Sami Al-Subaie"}, {"id": 652874, "school": "School B", "fac": 334, "level": "L1", "diag": 0.4831, "eoc": 0.72, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 1130.0, "corr": 0.667, "exit": 0.83, "temp": 0.69, "name": "Saif Al-Otaibi"}, {"id": 652875, "school": "School B", "fac": 502, "level": "L1", "diag": 0.3559, "eoc": 0.63, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 4155.0, "corr": 0.361, "exit": 0.74, "temp": 0.93, "name": "Turki Al-Mutairi"}, {"id": 652876, "school": "School B", "fac": 425, "level": "L1", "diag": 0.3983, "eoc": 0.56, "att": 0.75, "mission": 1.0, "trust": 1.0, "practice": 4953.0, "corr": 0.589, "exit": 0.69, "temp": 0.7, "name": "Sultan Al-Nasser"}, {"id": 652877, "school": "School B", "fac": 425, "level": "L1", "diag": 0.2881, "eoc": 0.41, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 3113.0, "corr": 0.459, "exit": 0.7, "temp": 0.95, "name": "Fahad Al-Khaldi"}, {"id": 652878, "school": "School B", "fac": 502, "level": "L1", "diag": 0.3898, "eoc": 0.78, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 2915.0, "corr": 0.765, "exit": 0.83, "temp": 0.89, "name": "Sami Al-Shehri"}, {"id": 652879, "school": "School B", "fac": 425, "level": "L2", "diag": 0.5508, "eoc": 0.69, "att": 0.79, "mission": 1.0, "trust": 1.0, "practice": 4452.0, "corr": 0.631, "exit": 0.76, "temp": 0.92, "name": "Naif Al-Subaie"}, {"id": 657728, "school": "School B", "fac": 502, "level": "L1", "diag": 0.4576, "eoc": 0.76, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 2194.0, "corr": 0.669, "exit": 0.82, "temp": 0.83, "name": "Raed Al-Harbi"}, {"id": 657732, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3814, "eoc": 0.6, "att": 0.76, "mission": 1.0, "trust": 1.0, "practice": 2466.0, "corr": 0.557, "exit": 0.8, "temp": 0.74, "name": "Maan Al-Rashidi"}, {"id": 659354, "school": "School B", "fac": 335, "level": "L1", "diag": 0.3644, "eoc": 0.62, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 3316.0, "corr": 0.393, "exit": 0.76, "temp": 0.7, "name": "Yousef Al-Yami"}, {"id": 663430, "school": "School B", "fac": 502, "level": "L1", "diag": 0.5, "eoc": 0.66, "att": 0.7, "mission": 1.0, "trust": 1.0, "practice": 1656.0, "corr": 0.574, "exit": 0.72, "temp": 0.97, "name": "Basel Al-Habib"}, {"id": 80042, "school": "School E", "fac": 348, "level": "L2", "diag": 0.661, "eoc": 0.73, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2612.0, "corr": 0.3, "exit": 0.77, "temp": 0.88, "name": "Salman Al-Balawi"}, {"id": 80043, "school": "School E", "fac": 347, "level": "L2", "diag": 0.5593, "eoc": 0.69, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 3112.0, "corr": 0.276, "exit": 0.63, "temp": 0.25, "name": "Marwan Al-Mutairi"}, {"id": 80044, "school": "School E", "fac": 348, "level": "L1", "diag": 0.4831, "eoc": 0.61, "att": 0.83, "mission": 1.0, "trust": 0.56, "practice": 2673.0, "corr": 0.27, "exit": 0.58, "temp": 0.5, "name": "Faisal Al-Ghamdi"}, {"id": 80046, "school": "School E", "fac": 348, "level": "L2", "diag": 0.5508, "eoc": 0.77, "att": 0.87, "mission": 1.0, "trust": 0.88, "practice": 2704.0, "corr": 0.318, "exit": 0.68, "temp": 0.17, "name": "Basel Al-Juhani"}, {"id": 80047, "school": "School E", "fac": 348, "level": "L2", "diag": 0.5339, "eoc": 0.75, "att": 0.98, "mission": 1.0, "trust": 0.82, "practice": 4834.0, "corr": 0.324, "exit": 0.5, "temp": 0.54, "name": "Naif Al-Qahtani"}, {"id": 80048, "school": "School E", "fac": 348, "level": "L2", "diag": 0.5169, "eoc": 0.56, "att": 0.75, "mission": 1.0, "trust": 1.0, "practice": 2769.0, "corr": 0.366, "exit": 0.59, "temp": 0.67, "name": "Abdulrahman Al-Rashidi"}, {"id": 80049, "school": "School E", "fac": 348, "level": "L2", "diag": 0.7034, "eoc": 0.79, "att": 0.93, "mission": 0.7, "trust": 0.78, "practice": 2992.0, "corr": 0.397, "exit": 0.78, "temp": 0.67, "name": "Suhail Al-Shehri"}, {"id": 80051, "school": "School E", "fac": 348, "level": "L2", "diag": 0.5763, "eoc": 0.69, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2474.0, "corr": 0.425, "exit": 0.75, "temp": 1.0, "name": "Basel Al-Mutairi"}, {"id": 80053, "school": "School E", "fac": 347, "level": "L1", "diag": 0.5, "eoc": 0.74, "att": 1.0, "mission": 1.0, "trust": 0.55, "practice": 3597.0, "corr": 0.338, "exit": 0.6, "temp": 0.6, "name": "Nawaf Al-Khaldi"}, {"id": 80055, "school": "School E", "fac": 347, "level": "L2", "diag": 0.7203, "eoc": 0.79, "att": 0.93, "mission": 0.7, "trust": 0.8, "practice": 2899.0, "corr": 0.48, "exit": 0.79, "temp": 0.75, "name": "Rayan Al-Faraj"}, {"id": 80056, "school": "School E", "fac": 347, "level": "L2", "diag": 0.7542, "eoc": 0.82, "att": 0.93, "mission": 0.6, "trust": 0.78, "practice": 4005.0, "corr": 0.639, "exit": 0.83, "temp": 0.96, "name": "Maan Al-Juhani"}, {"id": 80057, "school": "School E", "fac": 347, "level": "L2", "diag": 0.6441, "eoc": 0.75, "att": 0.8, "mission": 1.0, "trust": 0.7, "practice": 3203.0, "corr": 0.529, "exit": 0.66, "temp": 0.9, "name": "Sami Al-Saud"}, {"id": 80059, "school": "School E", "fac": 347, "level": "L2", "diag": 0.5254, "eoc": 0.79, "att": 0.86, "mission": 1.0, "trust": 0.63, "practice": 2064.0, "corr": 0.438, "exit": 0.75, "temp": 1.0, "name": "Sultan Al-Ghamdi"}, {"id": 80060, "school": "School E", "fac": 347, "level": "L2", "diag": 0.5932, "eoc": 0.75, "att": 0.98, "mission": 1.0, "trust": 0.67, "practice": 3005.0, "corr": 0.372, "exit": 0.74, "temp": 0.93, "name": "Yazeed Al-Nasser"}, {"id": 80061, "school": "School E", "fac": 347, "level": "L2", "diag": 0.7627, "eoc": 0.82, "att": 0.94, "mission": 0.5, "trust": 0.86, "practice": 3595.0, "corr": 0.453, "exit": 0.85, "temp": 0.69, "name": "Bandar Al-Faraj"}, {"id": 80062, "school": "School E", "fac": 347, "level": "L2", "diag": 0.5932, "eoc": 0.68, "att": 0.96, "mission": 1.0, "trust": 0.63, "practice": 2809.0, "corr": 0.281, "exit": 0.63, "temp": 1.0, "name": "Abdullah Al-Sulaiman"}, {"id": 80083, "school": "School E", "fac": 349, "level": "L2", "diag": 0.6695, "eoc": 0.84, "att": 0.73, "mission": 0.0, "trust": 0.63, "practice": 9502.0, "corr": 0.583, "exit": 0.79, "temp": 0.52, "name": "Badr Al-Hamdan"}, {"id": 80614, "school": "School E", "fac": 348, "level": "L2", "diag": 0.5424, "eoc": 0.62, "att": 0.88, "mission": 1.0, "trust": 1.0, "practice": 3725.0, "corr": 0.275, "exit": 0.76, "temp": 0.86, "name": "Sami Al-Shehri"}, {"id": 81833, "school": "School E", "fac": 349, "level": "L2", "diag": 0.5678, "eoc": 0.38, "att": 0.88, "mission": 0.0, "trust": 1.0, "practice": 2833.0, "corr": 0.248, "exit": 0.39, "temp": 0.19, "name": "Hussain Al-Shehri"}, {"id": 81834, "school": "School E", "fac": 349, "level": "L2", "diag": 0.7288, "eoc": 0.81, "att": 1.0, "mission": 0.0, "trust": 1.0, "practice": 5738.0, "corr": 0.245, "exit": 0.76, "temp": 0.93, "name": "Abdullah Al-Subaie"}, {"id": 81837, "school": "School E", "fac": 349, "level": "L2", "diag": 0.5763, "eoc": 0.75, "att": 0.8, "mission": 0.0, "trust": 0.89, "practice": 2774.0, "corr": 0.298, "exit": 0.62, "temp": 1.0, "name": "Badr Al-Nasser"}, {"id": 81840, "school": "School E", "fac": 347, "level": "L2", "diag": 0.5085, "eoc": 0.62, "att": 0.91, "mission": 1.0, "trust": 0.63, "practice": 3467.0, "corr": 0.309, "exit": 0.71, "temp": 0.93, "name": "Abdullah Al-Nasser"}, {"id": 81841, "school": "School E", "fac": 347, "level": "L2", "diag": 0.6017, "eoc": 0.79, "att": 1.0, "mission": 1.0, "trust": 0.9, "practice": 3016.0, "corr": 0.432, "exit": 0.82, "temp": 1.0, "name": "Waleed Al-Harbi"}, {"id": 81843, "school": "School E", "fac": 348, "level": "L2", "diag": 0.4492, "eoc": 0.57, "att": 0.67, "mission": 1.0, "trust": 1.0, "practice": 3244.0, "corr": 0.281, "exit": 0.6, "temp": 0.96, "name": "Zaid Al-Zahrani"}, {"id": 81844, "school": "School E", "fac": 347, "level": "L2", "diag": 0.6102, "eoc": 0.62, "att": 0.76, "mission": 1.0, "trust": 1.0, "practice": 4194.0, "corr": 0.332, "exit": 0.66, "temp": 0.89, "name": "Saif Al-Otaibi"}, {"id": 81845, "school": "School E", "fac": 348, "level": "L2", "diag": 0.7288, "eoc": 0.77, "att": 0.94, "mission": 0.7, "trust": 0.25, "practice": 5331.0, "corr": 0.334, "exit": 0.68, "temp": 0.94, "name": "Waleed Al-Mansour"}, {"id": 81846, "school": "School E", "fac": 348, "level": "L1", "diag": 0.4746, "eoc": 0.52, "att": 0.92, "mission": 1.0, "trust": 0.71, "practice": 2995.0, "corr": 0.357, "exit": 0.53, "temp": 0.6, "name": "Sami Al-Nasser"}, {"id": 81847, "school": "School E", "fac": 348, "level": "L2", "diag": 0.7034, "eoc": 0.82, "att": 1.0, "mission": 1.0, "trust": 0.75, "practice": 7821.0, "corr": 0.624, "exit": 0.79, "temp": 0.98, "name": "Hassan Al-Najjar"}, {"id": 81848, "school": "School E", "fac": 347, "level": "L2", "diag": 0.5169, "eoc": 0.72, "att": 0.91, "mission": 1.0, "trust": 0.9, "practice": 4207.0, "corr": 0.294, "exit": 0.63, "temp": 0.45, "name": "Ghazi Al-Shehri"}, {"id": 81851, "school": "School E", "fac": 348, "level": "L2", "diag": 0.6186, "eoc": 0.71, "att": 0.88, "mission": 0.5, "trust": 0.29, "practice": 2456.0, "corr": 0.292, "exit": 0.69, "temp": 0.79, "name": "Saad Al-Habib"}, {"id": 81852, "school": "School E", "fac": 347, "level": "L1", "diag": 0.4153, "eoc": 0.72, "att": 0.8, "mission": 1.0, "trust": 0.67, "practice": 2081.0, "corr": 0.354, "exit": 0.46, "temp": 0.5, "name": "Nawaf Al-Tamimi"}, {"id": 82660, "school": "School E", "fac": 347, "level": "L2", "diag": 0.5339, "eoc": 0.65, "att": 0.92, "mission": 1.0, "trust": 0.56, "practice": 3054.0, "corr": 0.391, "exit": 0.68, "temp": 0.86, "name": "Majed Al-Nasser"}, {"id": 84181, "school": "School E", "fac": 349, "level": "L2", "diag": 0.7458, "eoc": 0.76, "att": 0.98, "mission": 0.0, "trust": 0.7, "practice": 3273.0, "corr": 0.597, "exit": 0.78, "temp": 0.83, "name": "Hassan Al-Saud"}, {"id": 84183, "school": "School E", "fac": 347, "level": "L1", "diag": 0.2881, "eoc": 0.4, "att": 0.84, "mission": 1.0, "trust": 1.0, "practice": 4180.0, "corr": 0.282, "exit": 0.45, "temp": 0.67, "name": "Majed Al-Khaldi"}, {"id": 490282, "school": "School E", "fac": 348, "level": "L2", "diag": 0.5, "eoc": 0.67, "att": 0.87, "mission": 1.0, "trust": 1.0, "practice": 3688.0, "corr": 0.289, "exit": 0.7, "temp": 0.31, "name": "Rakan Al-Tamimi"}, {"id": 490408, "school": "School E", "fac": 349, "level": "L2", "diag": 0.7034, "eoc": 0.73, "att": 0.69, "mission": 0.0, "trust": 0.8, "practice": 3124.0, "corr": 0.256, "exit": 0.72, "temp": 0.04, "name": "Hassan Al-Tamimi"}, {"id": 492466, "school": "School E", "fac": 347, "level": "L2", "diag": 0.7712, "eoc": 0.85, "att": 0.8, "mission": 0.9, "trust": 1.0, "practice": 3839.0, "corr": 0.534, "exit": 0.85, "temp": 0.4, "name": "Saif Al-Habib"}, {"id": 493360, "school": "School E", "fac": 348, "level": "L2", "diag": 0.5678, "eoc": 0.65, "att": 0.85, "mission": 1.0, "trust": 0.8, "practice": 3213.0, "corr": 0.363, "exit": 0.68, "temp": 0.81, "name": "Ghazi Al-Tamimi"}, {"id": 647711, "school": "School E", "fac": 347, "level": "L2", "diag": 0.5847, "eoc": 0.8, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2621.0, "corr": 0.423, "exit": 0.72, "temp": 0.98, "name": "Saad Al-Mutairi"}, {"id": 647712, "school": "School E", "fac": 348, "level": "L1", "diag": 0.4153, "eoc": 0.48, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 4147.0, "corr": 0.291, "exit": 0.5, "temp": 0.91, "name": "Nawaf Al-Tamimi"}, {"id": 647713, "school": "School E", "fac": 347, "level": "L1", "diag": 0.5, "eoc": 0.69, "att": 0.93, "mission": 1.0, "trust": 1.0, "practice": 3138.0, "corr": 0.323, "exit": 0.64, "temp": 0.94, "name": "Yazeed Al-Otaibi"}, {"id": 647714, "school": "School E", "fac": 347, "level": "L1", "diag": 0.4153, "eoc": 0.64, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 3279.0, "corr": 0.296, "exit": 0.48, "temp": 0.49, "name": "Mishaal Al-Habib"}, {"id": 647716, "school": "School E", "fac": 346, "level": "L1", "diag": 0.3898, "eoc": 0.66, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 1448.0, "corr": 0.41, "exit": 0.64, "temp": 0.91, "name": "Abdullah Al-Habib"}, {"id": 647717, "school": "School E", "fac": 346, "level": "L2", "diag": 0.5424, "eoc": 0.75, "att": 0.93, "mission": 1.0, "trust": 0.78, "practice": 2391.0, "corr": 0.336, "exit": 0.71, "temp": 0.98, "name": "Ammar Al-Zahrani"}, {"id": 647718, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4068, "eoc": 0.6, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 2158.0, "corr": 0.508, "exit": 0.61, "temp": 0.75, "name": "Omar Al-Sulaiman"}, {"id": 647719, "school": "School E", "fac": 346, "level": "L2", "diag": 0.5508, "eoc": 0.86, "att": 0.96, "mission": 1.0, "trust": 0.89, "practice": 4092.0, "corr": 0.371, "exit": 0.79, "temp": 0.97, "name": "Tariq Al-Anazi"}, {"id": 647720, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4407, "eoc": 0.54, "att": 0.82, "mission": 1.0, "trust": 0.88, "practice": 1621.0, "corr": 0.326, "exit": 0.54, "temp": 0.39, "name": "Ziyad Al-Sulaiman"}, {"id": 647725, "school": "School E", "fac": 349, "level": "L2", "diag": 0.3559, "eoc": 0.43, "att": 0.91, "mission": 0.0, "trust": 0.5, "practice": 3715.0, "corr": 0.265, "exit": 0.6, "temp": 0.49, "name": "Ibrahim Al-Zahrani"}, {"id": 647726, "school": "School E", "fac": 349, "level": "L2", "diag": 0.5508, "eoc": 0.68, "att": 0.93, "mission": 0.0, "trust": 0.71, "practice": 3707.0, "corr": 0.255, "exit": 0.75, "temp": 0.5, "name": "Mohammed Al-Yami"}, {"id": 647728, "school": "School E", "fac": 349, "level": "L2", "diag": 0.4746, "eoc": 0.76, "att": 0.88, "mission": 0.0, "trust": 0.91, "practice": 2799.0, "corr": 0.325, "exit": 0.75, "temp": 0.88, "name": "Omar Al-Shammari"}, {"id": 647729, "school": "School E", "fac": 349, "level": "L2", "diag": 0.5424, "eoc": 0.75, "att": 0.88, "mission": 0.0, "trust": 1.0, "practice": 5835.0, "corr": 0.306, "exit": 0.74, "temp": 0.99, "name": "Rakan Al-Mutairi"}, {"id": 647730, "school": "School E", "fac": 349, "level": "L1", "diag": 0.3136, "eoc": 0.42, "att": 0.89, "mission": 0.0, "trust": 1.0, "practice": 4598.0, "corr": 0.242, "exit": 0.4, "temp": 0.0, "name": "Saud Al-Mansour"}, {"id": 647731, "school": "School E", "fac": 349, "level": "L2", "diag": 0.5424, "eoc": 0.62, "att": 0.91, "mission": 0.0, "trust": 1.0, "practice": 4428.0, "corr": 0.321, "exit": 0.73, "temp": 0.7, "name": "Naif Al-Anazi"}, {"id": 648814, "school": "School E", "fac": 346, "level": "L1", "diag": 0.3559, "eoc": 0.72, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 1863.0, "corr": 0.305, "exit": 0.58, "temp": 0.88, "name": "Rashid Al-Balawi"}, {"id": 648815, "school": "School E", "fac": 346, "level": "L1", "diag": 0.322, "eoc": 0.67, "att": 0.83, "mission": 1.0, "trust": 1.0, "practice": 1701.0, "corr": 0.383, "exit": 0.59, "temp": 0.84, "name": "Anas Al-Yami"}, {"id": 648817, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4407, "eoc": 0.82, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 1734.0, "corr": 0.427, "exit": 0.46, "temp": 0.93, "name": "Adel Al-Rashidi"}, {"id": 648818, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4831, "eoc": 0.63, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 1999.0, "corr": 0.437, "exit": 0.67, "temp": 0.58, "name": "Mohammed Al-Otaibi"}, {"id": 648819, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4407, "eoc": 0.65, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1220.0, "corr": 0.343, "exit": 0.49, "temp": 0.5, "name": "Salman Al-Dossari"}, {"id": 648820, "school": "School E", "fac": 346, "level": "L2", "diag": 0.5593, "eoc": 0.66, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 2510.0, "corr": 0.327, "exit": 0.7, "temp": 0.68, "name": "Hatim Al-Mutairi"}, {"id": 648821, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4915, "eoc": 0.7, "att": 0.98, "mission": 1.0, "trust": 0.5, "practice": 1914.0, "corr": 0.353, "exit": 0.58, "temp": 0.9, "name": "Abdullah Al-Otaibi"}, {"id": 648822, "school": "School E", "fac": 346, "level": "L2", "diag": 0.5932, "eoc": 0.81, "att": 0.8, "mission": 1.0, "trust": 1.0, "practice": 2310.0, "corr": 0.443, "exit": 0.79, "temp": 0.95, "name": "Raed Al-Juhani"}, {"id": 648832, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4237, "eoc": 0.42, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 1764.0, "corr": 0.278, "exit": 0.45, "temp": 0.52, "name": "Waleed Al-Khaldi"}, {"id": 648833, "school": "School E", "fac": 346, "level": "L1", "diag": 0.6017, "eoc": 0.68, "att": 0.8, "mission": 1.0, "trust": 1.0, "practice": 1231.0, "corr": 0.547, "exit": 0.69, "temp": 0.96, "name": "Hamad Al-Juhani"}, {"id": 648955, "school": "School E", "fac": 349, "level": "L1", "diag": 0.2542, "eoc": 0.41, "att": 0.9, "mission": 0.0, "trust": 1.0, "practice": 4523.0, "corr": 0.28, "exit": 0.63, "temp": 0.8, "name": "Raed Al-Balawi"}, {"id": 651106, "school": "School E", "fac": 346, "level": "L2", "diag": 0.4831, "eoc": 0.71, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 3122.0, "corr": 0.433, "exit": 0.71, "temp": 0.86, "name": "Sultan Al-Shammari"}, {"id": 651107, "school": "School E", "fac": 346, "level": "L1", "diag": 0.3983, "eoc": 0.57, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 1864.0, "corr": 0.361, "exit": 0.55, "temp": 0.73, "name": "Mansour Al-Harbi"}, {"id": 651110, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4237, "eoc": 0.6, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 1713.0, "corr": 0.398, "exit": 0.57, "temp": 0.8, "name": "Salman Al-Qahtani"}, {"id": 651111, "school": "School E", "fac": 346, "level": "L1", "diag": 0.2203, "eoc": 0.34, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 1921.0, "corr": 0.257, "exit": 0.46, "temp": 0.48, "name": "Maan Al-Juhani"}, {"id": 651545, "school": "School E", "fac": 348, "level": "L1", "diag": 0.3729, "eoc": 0.66, "att": 0.84, "mission": 1.0, "trust": 0.5, "practice": 2909.0, "corr": 0.266, "exit": 0.52, "temp": 0.5, "name": "Abdulrahman Al-Balawi"}, {"id": 651547, "school": "School E", "fac": 348, "level": "L2", "diag": 0.6271, "eoc": 0.72, "att": 0.82, "mission": 1.0, "trust": 1.0, "practice": 2339.0, "corr": 0.318, "exit": 0.74, "temp": 0.46, "name": "Adel Al-Yami"}, {"id": 651548, "school": "School E", "fac": 348, "level": "L1", "diag": 0.3729, "eoc": 0.52, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 2716.0, "corr": 0.367, "exit": 0.49, "temp": 0.75, "name": "Tameem Al-Khaldi"}, {"id": 652865, "school": "School E", "fac": 346, "level": "L1", "diag": 0.322, "eoc": 0.63, "att": 0.58, "mission": 1.0, "trust": 1.0, "practice": 1588.0, "corr": 0.266, "exit": 0.5, "temp": 0.59, "name": "Ghazi Al-Yami"}, {"id": 652867, "school": "School E", "fac": 346, "level": "L1", "diag": 0.4068, "eoc": 0.61, "att": 0.82, "mission": 1.0, "trust": 1.0, "practice": 1524.0, "corr": 0.375, "exit": 0.52, "temp": 0.88, "name": "Omar Al-Anazi"}, {"id": 652868, "school": "School E", "fac": 346, "level": "L1", "diag": 0.3136, "eoc": 0.37, "att": 0.53, "mission": 0.2, "trust": 1.0, "practice": 900.0, "corr": 0.249, "exit": 0.55, "temp": 0.85, "name": "Hussain Al-Ghamdi"}, {"id": 652869, "school": "School E", "fac": 346, "level": "L1", "diag": 0.5508, "eoc": 0.76, "att": 0.98, "mission": 1.0, "trust": 0.91, "practice": 2246.0, "corr": 0.358, "exit": 0.63, "temp": 0.88, "name": "Saif Al-Omar"}, {"id": 652881, "school": "School E", "fac": 349, "level": "L2", "diag": 0.7797, "eoc": 0.89, "att": 0.92, "mission": 0.0, "trust": 1.0, "practice": 6740.0, "corr": 0.474, "exit": 0.83, "temp": 0.97, "name": "Rakan Al-Najjar"}, {"id": 652882, "school": "School E", "fac": 349, "level": "L2", "diag": 0.6102, "eoc": 0.62, "att": 0.81, "mission": 0.0, "trust": 1.0, "practice": 2419.0, "corr": 0.316, "exit": 0.78, "temp": 0.42, "name": "Hamad Al-Yami"}, {"id": 652883, "school": "School E", "fac": 349, "level": "L2", "diag": 0.3814, "eoc": 0.67, "att": 0.47, "mission": 0.0, "trust": 1.0, "practice": 2212.0, "corr": 0.262, "exit": 0.82, "temp": 1.0, "name": "Sultan Al-Khaldi"}, {"id": 80086, "school": "School A", "fac": 390, "level": "L1", "diag": 0.4237, "eoc": 0.53, "att": 0.92, "mission": 0.8, "trust": 0.71, "practice": 2843.0, "corr": 0.313, "exit": 0.62, "temp": 0.33, "name": "Ziyad Al-Balawi"}, {"id": 80087, "school": "School A", "fac": 390, "level": "L2", "diag": 0.9153, "eoc": 0.89, "att": 0.91, "mission": 0.0, "trust": 0.5, "practice": 3481.0, "corr": 0.395, "exit": 0.88, "temp": 0.17, "name": "Ziyad Al-Yami"}, {"id": 80088, "school": "School A", "fac": 421, "level": "L1", "diag": 0.3898, "eoc": 0.48, "att": 0.73, "mission": 0.9, "trust": 0.75, "practice": 3995.0, "corr": 0.284, "exit": 0.5, "temp": 0.44, "name": "Hassan Al-Rashidi"}, {"id": 80089, "school": "School A", "fac": 421, "level": "L2", "diag": 0.5508, "eoc": 0.68, "att": 0.72, "mission": 1.0, "trust": 0.33, "practice": 4637.0, "corr": 0.311, "exit": 0.73, "temp": 1.0, "name": "Anas Al-Asiri"}, {"id": 80090, "school": "School A", "fac": 421, "level": "L2", "diag": 0.4831, "eoc": 0.76, "att": 1.0, "mission": 1.0, "trust": 0.5, "practice": 3799.0, "corr": 0.283, "exit": 0.72, "temp": 0.85, "name": "Talal Al-Faraj"}, {"id": 80091, "school": "School A", "fac": 390, "level": "L2", "diag": 0.678, "eoc": 0.79, "att": 0.98, "mission": 0.9, "trust": 0.88, "practice": 5068.0, "corr": 0.344, "exit": 0.75, "temp": 0.69, "name": "Turki Al-Harbi"}, {"id": 80092, "school": "School A", "fac": 421, "level": "L2", "diag": 0.6441, "eoc": 0.75, "att": 0.85, "mission": 1.0, "trust": 0.0, "practice": 3732.0, "corr": 0.296, "exit": 0.73, "temp": 0.91, "name": "Hassan Al-Yami"}, {"id": 80094, "school": "School A", "fac": 421, "level": "L2", "diag": 0.4576, "eoc": 0.55, "att": 0.93, "mission": 1.0, "trust": 1.0, "practice": 3797.0, "corr": 0.264, "exit": 0.71, "temp": 0.99, "name": "Mishaal Al-Yami"}, {"id": 80095, "school": "School A", "fac": 390, "level": "L2", "diag": 0.5424, "eoc": 0.69, "att": 0.9, "mission": 0.7, "trust": 1.0, "practice": 3223.0, "corr": 0.366, "exit": 0.6, "temp": 0.62, "name": "Ghazi Al-Nasser"}, {"id": 80096, "school": "School A", "fac": 390, "level": "L2", "diag": 0.4322, "eoc": 0.56, "att": 0.92, "mission": 0.3, "trust": 1.0, "practice": 2167.0, "corr": 0.275, "exit": 0.66, "temp": 0.91, "name": "Majed Al-Najjar"}, {"id": 80098, "school": "School A", "fac": 390, "level": "L2", "diag": 0.6102, "eoc": 0.84, "att": 0.76, "mission": 0.6, "trust": 0.75, "practice": 1947.0, "corr": 0.452, "exit": 0.81, "temp": 0.87, "name": "Mansour Al-Subaie"}, {"id": 80099, "school": "School A", "fac": 390, "level": "L2", "diag": 0.6102, "eoc": 0.74, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2765.0, "corr": 0.445, "exit": 0.77, "temp": 0.57, "name": "Anas Al-Faraj"}, {"id": 80104, "school": "School A", "fac": 391, "level": "L2", "diag": 0.2881, "eoc": 0.67, "att": 0.85, "mission": 1.0, "trust": 0.6, "practice": 2306.0, "corr": 0.242, "exit": 0.67, "temp": 0.87, "name": "Abdulrahman Al-Subaie"}, {"id": 80105, "school": "School A", "fac": 391, "level": "L2", "diag": 0.5424, "eoc": 0.75, "att": 0.96, "mission": 1.0, "trust": 0.83, "practice": 2292.0, "corr": 0.312, "exit": 0.74, "temp": 0.88, "name": "Talal Al-Harbi"}, {"id": 80106, "school": "School A", "fac": 391, "level": "L2", "diag": 0.4831, "eoc": 0.76, "att": 0.98, "mission": 1.0, "trust": 0.8, "practice": 1440.0, "corr": 0.276, "exit": 0.7, "temp": 0.84, "name": "Hussain Al-Tamimi"}, {"id": 80107, "school": "School A", "fac": 391, "level": "L2", "diag": 0.2203, "eoc": 0.31, "att": 0.66, "mission": 1.0, "trust": null, "practice": 2454.0, "corr": 0.272, "exit": 0.7, "temp": 0.94, "name": "Hatim Al-Najjar"}, {"id": 80109, "school": "School A", "fac": 391, "level": "L2", "diag": 0.2797, "eoc": 0.48, "att": 0.75, "mission": 1.0, "trust": 0.33, "practice": 2627.0, "corr": 0.272, "exit": 0.71, "temp": 0.57, "name": "Rashid Al-Rashidi"}, {"id": 80110, "school": "School A", "fac": 391, "level": "L2", "diag": 0.4831, "eoc": 0.32, "att": 0.52, "mission": 0.9, "trust": null, "practice": 1025.0, "corr": 0.285, "exit": 0.54, "temp": 0.5, "name": "Tariq Al-Maliki"}, {"id": 80112, "school": "School A", "fac": 391, "level": "L2", "diag": 0.3814, "eoc": 0.56, "att": 0.83, "mission": 1.0, "trust": 0.6, "practice": 3356.0, "corr": 0.292, "exit": 0.55, "temp": 0.64, "name": "Rayan Al-Yami"}, {"id": 80581, "school": "School A", "fac": 390, "level": "L2", "diag": 0.4915, "eoc": 0.69, "att": 0.98, "mission": 0.0, "trust": 0.29, "practice": 2544.0, "corr": 0.29, "exit": 0.71, "temp": 0.54, "name": "Yousef Al-Balawi"}, {"id": 80584, "school": "School A", "fac": 390, "level": "L2", "diag": 0.7966, "eoc": 0.86, "att": 0.89, "mission": 0.5, "trust": 0.0, "practice": 2962.0, "corr": 0.562, "exit": 0.84, "temp": 0.52, "name": "Ammar Al-Tamimi"}, {"id": 80585, "school": "School A", "fac": 390, "level": "L2", "diag": 0.4322, "eoc": 0.64, "att": 0.98, "mission": 0.2, "trust": 0.83, "practice": 2678.0, "corr": 0.341, "exit": 0.76, "temp": 0.33, "name": "Ghazi Al-Dossari"}, {"id": 80589, "school": "School A", "fac": 421, "level": "L2", "diag": 0.7458, "eoc": 0.83, "att": 0.98, "mission": 1.0, "trust": 0.91, "practice": 6743.0, "corr": 0.407, "exit": 0.8, "temp": 0.99, "name": "Saif Al-Ghamdi"}, {"id": 80592, "school": "School A", "fac": 391, "level": "L2", "diag": 0.4831, "eoc": 0.6, "att": 0.85, "mission": 1.0, "trust": 0.33, "practice": 1940.0, "corr": 0.217, "exit": 0.62, "temp": 0.58, "name": "Talal Al-Balawi"}, {"id": 81858, "school": "School A", "fac": 391, "level": "L2", "diag": 0.6525, "eoc": 0.71, "att": 0.89, "mission": 0.8, "trust": 1.0, "practice": 2086.0, "corr": 0.291, "exit": 0.68, "temp": 0.11, "name": "Saif Al-Saleh"}, {"id": 82751, "school": "School A", "fac": 390, "level": "L2", "diag": 0.5763, "eoc": 0.68, "att": 0.89, "mission": 0.0, "trust": 0.71, "practice": 2768.0, "corr": 0.293, "exit": 0.63, "temp": 0.82, "name": "Ayman Al-Rashidi"}, {"id": 82752, "school": "School A", "fac": 390, "level": "L2", "diag": 0.6356, "eoc": 0.76, "att": 0.73, "mission": 0.3, "trust": 0.33, "practice": 2174.0, "corr": 0.339, "exit": 0.7, "temp": 0.77, "name": "Khalid Al-Sulaiman"}, {"id": 82753, "school": "School A", "fac": 421, "level": "L2", "diag": 0.6186, "eoc": 0.81, "att": 0.89, "mission": 1.0, "trust": 0.5, "practice": 3820.0, "corr": 0.319, "exit": 0.86, "temp": 0.99, "name": "Fawaz Al-Zahrani"}, {"id": 82754, "school": "School A", "fac": 390, "level": "L2", "diag": 0.4322, "eoc": 0.56, "att": 0.83, "mission": 0.1, "trust": 0.8, "practice": 2474.0, "corr": 0.285, "exit": 0.54, "temp": 0.67, "name": "Zaid Al-Subaie"}, {"id": 82755, "school": "School A", "fac": 421, "level": "L2", "diag": 0.6695, "eoc": 0.83, "att": 0.9, "mission": 1.0, "trust": 0.83, "practice": 5441.0, "corr": 0.36, "exit": 0.77, "temp": 1.0, "name": "Ibrahim Al-Tamimi"}, {"id": 82756, "school": "School A", "fac": 421, "level": "L2", "diag": 0.3475, "eoc": 0.48, "att": 1.0, "mission": 1.0, "trust": 0.67, "practice": 3948.0, "corr": 0.349, "exit": 0.66, "temp": 0.85, "name": "Omar Al-Shehri"}, {"id": 82758, "school": "School A", "fac": 421, "level": "L2", "diag": 0.5, "eoc": 0.72, "att": 0.94, "mission": 1.0, "trust": 0.71, "practice": 4960.0, "corr": 0.269, "exit": 0.68, "temp": 0.99, "name": "Mohammed Al-Qahtani"}, {"id": 82760, "school": "School A", "fac": 390, "level": "L2", "diag": 0.6525, "eoc": 0.88, "att": 0.85, "mission": 0.0, "trust": 0.5, "practice": 2348.0, "corr": 0.31, "exit": 0.77, "temp": 0.67, "name": "Saad Al-Amri"}, {"id": 82761, "school": "School A", "fac": 421, "level": "L2", "diag": 0.8305, "eoc": 0.87, "att": 0.94, "mission": 1.0, "trust": 0.5, "practice": 5339.0, "corr": 0.557, "exit": 0.86, "temp": 0.89, "name": "Ayman Al-Habib"}, {"id": 82762, "school": "School A", "fac": 390, "level": "L2", "diag": 0.4915, "eoc": 0.8, "att": 0.88, "mission": 0.9, "trust": 1.0, "practice": 3396.0, "corr": 0.382, "exit": 0.79, "temp": 0.89, "name": "Suhail Al-Ghamdi"}, {"id": 82763, "school": "School A", "fac": 421, "level": "L1", "diag": 0.4576, "eoc": 0.71, "att": 0.9, "mission": 1.0, "trust": 0.33, "practice": 4631.0, "corr": 0.321, "exit": 0.57, "temp": 0.79, "name": "Tariq Al-Juhani"}, {"id": 82764, "school": "School A", "fac": 390, "level": "L2", "diag": 0.4576, "eoc": 0.57, "att": 0.92, "mission": 0.7, "trust": 0.88, "practice": 2514.0, "corr": 0.293, "exit": 0.63, "temp": 0.91, "name": "Basel Al-Hamdan"}, {"id": 82767, "school": "School A", "fac": 421, "level": "L2", "diag": 0.4915, "eoc": 0.74, "att": 0.84, "mission": 1.0, "trust": 0.8, "practice": 4426.0, "corr": 0.41, "exit": 0.77, "temp": 1.0, "name": "Omar Al-Asiri"}, {"id": 82770, "school": "School A", "fac": 391, "level": "L2", "diag": 0.322, "eoc": 0.61, "att": 0.85, "mission": 1.0, "trust": 0.5, "practice": 4611.0, "corr": 0.212, "exit": 0.6, "temp": 0.6, "name": "Yazeed Al-Shammari"}, {"id": 84187, "school": "School A", "fac": 421, "level": "L2", "diag": 0.5339, "eoc": 0.71, "att": 0.93, "mission": 1.0, "trust": 0.78, "practice": 3686.0, "corr": 0.302, "exit": 0.7, "temp": 0.91, "name": "Marwan Al-Shammari"}, {"id": 84188, "school": "School A", "fac": 421, "level": "L2", "diag": 0.6102, "eoc": 0.78, "att": 0.77, "mission": 1.0, "trust": 1.0, "practice": 3390.0, "corr": 0.482, "exit": 0.8, "temp": 0.99, "name": "Saad Al-Shehri"}, {"id": 85372, "school": "School A", "fac": 421, "level": "L2", "diag": 0.3898, "eoc": 0.63, "att": 0.9, "mission": 1.0, "trust": 0.5, "practice": 3219.0, "corr": 0.315, "exit": 0.7, "temp": 0.84, "name": "Rashid Al-Asiri"}, {"id": 85373, "school": "School A", "fac": 390, "level": "L2", "diag": 0.6695, "eoc": 0.77, "att": 0.89, "mission": 0.8, "trust": 0.5, "practice": 4114.0, "corr": 0.408, "exit": 0.78, "temp": 0.72, "name": "Abdulrahman Al-Nasser"}, {"id": 85374, "school": "School A", "fac": 421, "level": "L2", "diag": 0.7458, "eoc": 0.8, "att": 0.98, "mission": 1.0, "trust": 0.91, "practice": 4071.0, "corr": 0.484, "exit": 0.79, "temp": 0.29, "name": "Fawaz Al-Habib"}, {"id": 85379, "school": "School A", "fac": 421, "level": "L2", "diag": 0.6017, "eoc": 0.73, "att": 0.85, "mission": 1.0, "trust": 0.88, "practice": 3520.0, "corr": 0.351, "exit": 0.71, "temp": 0.96, "name": "Suhail Al-Nasser"}, {"id": 85383, "school": "School A", "fac": 391, "level": "L2", "diag": 0.8644, "eoc": 0.89, "att": 0.83, "mission": 0.9, "trust": 0.5, "practice": 4538.0, "corr": 0.439, "exit": 0.84, "temp": 0.43, "name": "Fahad Al-Mansour"}, {"id": 85387, "school": "School A", "fac": 391, "level": "L2", "diag": 0.4915, "eoc": 0.6, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 2366.0, "corr": 0.294, "exit": 0.58, "temp": 0.67, "name": "Hussain Al-Zahrani"}, {"id": 88179, "school": "School A", "fac": 421, "level": "L1", "diag": 0.3051, "eoc": 0.48, "att": 0.79, "mission": 1.0, "trust": 0.83, "practice": 2730.0, "corr": 0.295, "exit": 0.45, "temp": 0.8, "name": "Majed Al-Tamimi"}, {"id": 496056, "school": "School A", "fac": 390, "level": "L2", "diag": 0.4915, "eoc": 0.68, "att": 0.73, "mission": 0.0, "trust": 0.67, "practice": 2268.0, "corr": 0.243, "exit": 0.6, "temp": 0.87, "name": "Yazeed Al-Balawi"}, {"id": 647660, "school": "School A", "fac": 419, "level": "L1", "diag": 0.3644, "eoc": 0.56, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 1745.0, "corr": 0.375, "exit": 0.67, "temp": 0.8, "name": "Tariq Al-Qahtani"}, {"id": 647661, "school": "School A", "fac": 389, "level": "L1", "diag": 0.322, "eoc": 0.5, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2135.0, "corr": 0.299, "exit": 0.43, "temp": 0.42, "name": "Sami Al-Zahrani"}, {"id": 647662, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4068, "eoc": 0.6, "att": 0.98, "mission": 1.0, "trust": 0.78, "practice": 3601.0, "corr": 0.544, "exit": 0.48, "temp": 0.44, "name": "Sultan Al-Maliki"}, {"id": 647663, "school": "School A", "fac": 389, "level": "L1", "diag": 0.2034, "eoc": 0.59, "att": 0.83, "mission": 1.0, "trust": 1.0, "practice": 2336.0, "corr": 0.264, "exit": 0.42, "temp": 0.74, "name": "Turki Al-Tamimi"}, {"id": 647664, "school": "School A", "fac": 391, "level": "L2", "diag": 0.4746, "eoc": 0.68, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 1838.0, "corr": 0.384, "exit": 0.76, "temp": 1.0, "name": "Tariq Al-Yami"}, {"id": 647665, "school": "School A", "fac": 420, "level": "L1", "diag": 0.3559, "eoc": 0.43, "att": 0.79, "mission": 1.0, "trust": 1.0, "practice": 2288.0, "corr": 0.307, "exit": 0.43, "temp": 0.83, "name": "Nasser Al-Faraj"}, {"id": 647666, "school": "School A", "fac": 419, "level": "L1", "diag": 0.4237, "eoc": 0.72, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 2197.0, "corr": 0.455, "exit": 0.68, "temp": 0.92, "name": "Raed Al-Rashidi"}, {"id": 647667, "school": "School A", "fac": 420, "level": "L1", "diag": 0.4153, "eoc": 0.62, "att": 0.87, "mission": 1.0, "trust": 1.0, "practice": 2007.0, "corr": 0.275, "exit": 0.51, "temp": 0.59, "name": "Fawaz Al-Nasser"}, {"id": 647668, "school": "School A", "fac": 419, "level": "L1", "diag": 0.3051, "eoc": 0.49, "att": 1.0, "mission": 1.0, "trust": 0.57, "practice": 1482.0, "corr": 0.36, "exit": 0.49, "temp": 0.31, "name": "Rayan Al-Najjar"}, {"id": 647669, "school": "School A", "fac": 419, "level": "L1", "diag": 0.3814, "eoc": 0.7, "att": 0.93, "mission": 1.0, "trust": 1.0, "practice": 2415.0, "corr": 0.393, "exit": 0.69, "temp": 0.82, "name": "Tameem Al-Nasser"}, {"id": 647670, "school": "School A", "fac": 419, "level": "L1", "diag": 0.2797, "eoc": 0.38, "att": 0.81, "mission": 1.0, "trust": 1.0, "practice": 1695.0, "corr": 0.335, "exit": 0.58, "temp": 0.87, "name": "Fares Al-Juhani"}, {"id": 647671, "school": "School A", "fac": 389, "level": "L1", "diag": 0.3814, "eoc": 0.62, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2170.0, "corr": 0.302, "exit": 0.49, "temp": 0.54, "name": "Sami Al-Maliki"}, {"id": 647672, "school": "School A", "fac": 420, "level": "L1", "diag": 0.4661, "eoc": 0.59, "att": 0.93, "mission": 1.0, "trust": 0.83, "practice": 2183.0, "corr": 0.339, "exit": 0.53, "temp": 0.95, "name": "Nawaf Al-Khaldi"}, {"id": 647673, "school": "School A", "fac": 420, "level": "L1", "diag": 0.4746, "eoc": 0.55, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 2747.0, "corr": 0.398, "exit": 0.6, "temp": 0.91, "name": "Ammar Al-Maliki"}, {"id": 647674, "school": "School A", "fac": 419, "level": "L1", "diag": 0.3814, "eoc": 0.48, "att": 0.96, "mission": 1.0, "trust": 0.63, "practice": 3317.0, "corr": 0.222, "exit": 0.54, "temp": 0.7, "name": "Salman Al-Mansour"}, {"id": 647675, "school": "School A", "fac": 419, "level": "L1", "diag": 0.5424, "eoc": 0.72, "att": 1.0, "mission": 1.0, "trust": 1.0, "practice": 2391.0, "corr": 0.299, "exit": 0.65, "temp": 0.65, "name": "Saad Al-Sulaiman"}, {"id": 647676, "school": "School A", "fac": 419, "level": "L1", "diag": 0.3729, "eoc": 0.71, "att": 0.91, "mission": 1.0, "trust": 1.0, "practice": 2078.0, "corr": 0.33, "exit": 0.65, "temp": 0.83, "name": "Basel Al-Mutairi"}, {"id": 647677, "school": "School A", "fac": 419, "level": "L2", "diag": 0.5678, "eoc": 0.67, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 3703.0, "corr": 0.24, "exit": 0.71, "temp": 0.64, "name": "Suhail Al-Mansour"}, {"id": 647678, "school": "School A", "fac": 420, "level": "L1", "diag": 0.3729, "eoc": 0.75, "att": 0.88, "mission": 1.0, "trust": 1.0, "practice": 2252.0, "corr": 0.473, "exit": 0.64, "temp": 0.84, "name": "Nasser Al-Amri"}, {"id": 647679, "school": "School A", "fac": 419, "level": "L1", "diag": 0.4746, "eoc": 0.62, "att": 0.74, "mission": 1.0, "trust": 1.0, "practice": 2738.0, "corr": 0.325, "exit": 0.56, "temp": 0.74, "name": "Basel Al-Zahrani"}, {"id": 647680, "school": "School A", "fac": 419, "level": "L1", "diag": 0.4068, "eoc": 0.58, "att": 0.88, "mission": 1.0, "trust": 0.78, "practice": 4450.0, "corr": 0.329, "exit": 0.56, "temp": 0.7, "name": "Naif Al-Maliki"}, {"id": 647681, "school": "School A", "fac": 419, "level": "L1", "diag": 0.3898, "eoc": 0.5, "att": 0.81, "mission": 1.0, "trust": 1.0, "practice": 2519.0, "corr": 0.314, "exit": 0.5, "temp": 0.47, "name": "Saud Al-Asiri"}, {"id": 647682, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4153, "eoc": 0.61, "att": 0.92, "mission": 1.0, "trust": 0.63, "practice": 2303.0, "corr": 0.308, "exit": 0.52, "temp": 0.54, "name": "Talal Al-Zahrani"}, {"id": 647683, "school": "School A", "fac": 419, "level": "L1", "diag": 0.4915, "eoc": 0.35, "att": 0.86, "mission": 1.0, "trust": 0.86, "practice": 1907.0, "corr": 0.333, "exit": 0.46, "temp": 0.64, "name": "Naif Al-Rashidi"}, {"id": 647684, "school": "School A", "fac": 419, "level": "L1", "diag": 0.339, "eoc": 0.46, "att": 0.9, "mission": 1.0, "trust": 0.75, "practice": 2052.0, "corr": 0.283, "exit": 0.45, "temp": 0.71, "name": "Hamad Al-Nasser"}, {"id": 647685, "school": "School A", "fac": 419, "level": "L1", "diag": 0.3475, "eoc": 0.76, "att": 1.0, "mission": 1.0, "trust": 0.58, "practice": 2701.0, "corr": 0.534, "exit": 0.73, "temp": 0.77, "name": "Adel Al-Ghamdi"}, {"id": 647686, "school": "School A", "fac": 389, "level": "L1", "diag": 0.3729, "eoc": 0.61, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 3858.0, "corr": 0.341, "exit": 0.55, "temp": 0.34, "name": "Turki Al-Shehri"}, {"id": 647687, "school": "School A", "fac": 419, "level": "L2", "diag": 0.5169, "eoc": 0.62, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 3575.0, "corr": 0.378, "exit": 0.67, "temp": 0.83, "name": "Ibrahim Al-Shammari"}, {"id": 647688, "school": "School A", "fac": 389, "level": "L1", "diag": 0.3898, "eoc": 0.63, "att": 0.96, "mission": 1.0, "trust": 0.56, "practice": 10536.0, "corr": 0.281, "exit": 0.58, "temp": 0.96, "name": "Yazeed Al-Shehri"}, {"id": 647689, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4237, "eoc": 0.45, "att": 0.92, "mission": 1.0, "trust": 1.0, "practice": 3349.0, "corr": 0.311, "exit": 0.49, "temp": 0.67, "name": "Maan Al-Harbi"}, {"id": 647692, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4237, "eoc": 0.59, "att": 0.93, "mission": 1.0, "trust": 0.71, "practice": 3124.0, "corr": 0.282, "exit": 0.59, "temp": 0.24, "name": "Saud Al-Juhani"}, {"id": 647694, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4407, "eoc": 0.53, "att": 1.0, "mission": 1.0, "trust": 0.5, "practice": 7190.0, "corr": 0.255, "exit": 0.68, "temp": 0.87, "name": "Hassan Al-Rashidi"}, {"id": 647695, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4322, "eoc": 0.6, "att": 0.72, "mission": 1.0, "trust": 1.0, "practice": 2717.0, "corr": 0.321, "exit": 0.55, "temp": 0.68, "name": "Adel Al-Maliki"}, {"id": 647696, "school": "School A", "fac": 389, "level": "L1", "diag": 0.5932, "eoc": 0.73, "att": 0.95, "mission": 1.0, "trust": 0.71, "practice": 3062.0, "corr": 0.285, "exit": 0.67, "temp": 0.17, "name": "Hassan Al-Qahtani"}, {"id": 647697, "school": "School A", "fac": 389, "level": "L1", "diag": 0.2966, "eoc": 0.62, "att": 0.72, "mission": 1.0, "trust": 0.83, "practice": 2432.0, "corr": 0.358, "exit": 0.52, "temp": 0.72, "name": "Yousef Al-Sulaiman"}, {"id": 647698, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4746, "eoc": 0.56, "att": 0.81, "mission": 1.0, "trust": 0.75, "practice": 3310.0, "corr": 0.259, "exit": 0.58, "temp": 0.57, "name": "Hassan Al-Shammari"}, {"id": 647699, "school": "School A", "fac": 389, "level": "L1", "diag": 0.5169, "eoc": 0.6, "att": 0.77, "mission": 1.0, "trust": 1.0, "practice": 2254.0, "corr": 0.309, "exit": 0.59, "temp": 0.46, "name": "Suhail Al-Hamdan"}, {"id": 647700, "school": "School A", "fac": 389, "level": "L1", "diag": 0.5593, "eoc": 0.58, "att": 0.91, "mission": 1.0, "trust": 0.86, "practice": 3790.0, "corr": 0.28, "exit": 0.7, "temp": 0.39, "name": "Yazeed Al-Saud"}, {"id": 647703, "school": "School A", "fac": 390, "level": "L1", "diag": 0.5, "eoc": 0.62, "att": 0.98, "mission": 0.9, "trust": 0.63, "practice": 3045.0, "corr": 0.256, "exit": 0.51, "temp": 0.53, "name": "Fawaz Al-Hamdan"}, {"id": 647704, "school": "School A", "fac": 421, "level": "L1", "diag": 0.4322, "eoc": 0.49, "att": 0.92, "mission": 1.0, "trust": 0.71, "practice": 5644.0, "corr": 0.219, "exit": 0.51, "temp": 0.33, "name": "Mishaal Al-Amri"}, {"id": 647705, "school": "School A", "fac": 421, "level": "L1", "diag": 0.3559, "eoc": 0.5, "att": 0.87, "mission": 1.0, "trust": 1.0, "practice": 3851.0, "corr": 0.236, "exit": 0.53, "temp": 0.27, "name": "Abdulrahman Al-Anazi"}, {"id": 647706, "school": "School A", "fac": 421, "level": "L2", "diag": 0.5847, "eoc": 0.68, "att": 1.0, "mission": 1.0, "trust": 0.89, "practice": 4538.0, "corr": 0.315, "exit": 0.68, "temp": 0.57, "name": "Ziyad Al-Mansour"}, {"id": 647707, "school": "School A", "fac": 421, "level": "L1", "diag": 0.3475, "eoc": 0.51, "att": 0.98, "mission": 1.0, "trust": 0.57, "practice": 4408.0, "corr": 0.237, "exit": 0.47, "temp": 0.13, "name": "Mishaal Al-Habib"}, {"id": 647708, "school": "School A", "fac": 390, "level": "L1", "diag": 0.4237, "eoc": 0.59, "att": 0.94, "mission": 0.9, "trust": 1.0, "practice": 2430.0, "corr": 0.327, "exit": 0.52, "temp": 0.96, "name": "Hassan Al-Faraj"}, {"id": 647709, "school": "School A", "fac": 390, "level": "L2", "diag": 0.6102, "eoc": 0.79, "att": 0.83, "mission": 0.0, "trust": 1.0, "practice": 2115.0, "corr": 0.339, "exit": 0.72, "temp": 0.47, "name": "Ghazi Al-Khaldi"}, {"id": 648962, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4576, "eoc": 0.64, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 7384.0, "corr": 0.313, "exit": 0.6, "temp": 0.91, "name": "Adel Al-Tamimi"}, {"id": 648963, "school": "School A", "fac": 420, "level": "L1", "diag": 0.3305, "eoc": 0.42, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1961.0, "corr": 0.318, "exit": 0.56, "temp": 0.83, "name": "Raed Al-Nasser"}, {"id": 648964, "school": "School A", "fac": 420, "level": "L1", "diag": 0.3051, "eoc": 0.41, "att": 0.89, "mission": 1.0, "trust": 1.0, "practice": 2075.0, "corr": 0.208, "exit": 0.46, "temp": 0.3, "name": "Ibrahim Al-Amri"}, {"id": 648965, "school": "School A", "fac": 420, "level": "L2", "diag": 0.4661, "eoc": 0.58, "att": 0.98, "mission": 1.0, "trust": 0.63, "practice": 2782.0, "corr": 0.275, "exit": 0.64, "temp": 0.89, "name": "Ibrahim Al-Mutairi"}, {"id": 648966, "school": "School A", "fac": 420, "level": "L2", "diag": 0.5678, "eoc": 0.69, "att": 0.8, "mission": 1.0, "trust": 1.0, "practice": 1144.0, "corr": 0.531, "exit": 0.73, "temp": 1.0, "name": "Hussain Al-Amri"}, {"id": 648967, "school": "School A", "fac": 420, "level": "L1", "diag": 0.2797, "eoc": 0.52, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1715.0, "corr": 0.312, "exit": 0.43, "temp": 0.75, "name": "Mohammed Al-Shammari"}, {"id": 648968, "school": "School A", "fac": 419, "level": "L1", "diag": 0.5254, "eoc": 0.44, "att": 0.9, "mission": 1.0, "trust": 0.86, "practice": 1959.0, "corr": 0.263, "exit": 0.51, "temp": 0.83, "name": "Rakan Al-Yami"}, {"id": 648969, "school": "School A", "fac": 420, "level": "L1", "diag": 0.4407, "eoc": 0.67, "att": 0.77, "mission": 1.0, "trust": 1.0, "practice": 1395.0, "corr": 0.265, "exit": 0.58, "temp": 0.69, "name": "Zaid Al-Tamimi"}, {"id": 648970, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4068, "eoc": 0.55, "att": 0.87, "mission": 1.0, "trust": 1.0, "practice": 9768.0, "corr": 0.291, "exit": 0.58, "temp": 0.65, "name": "Anas Al-Khaldi"}, {"id": 648971, "school": "School A", "fac": 420, "level": "L1", "diag": 0.4322, "eoc": 0.65, "att": 0.98, "mission": 1.0, "trust": 0.9, "practice": 3585.0, "corr": 0.502, "exit": 0.59, "temp": 0.86, "name": "Nawaf Al-Sulaiman"}, {"id": 648972, "school": "School A", "fac": 389, "level": "L1", "diag": 0.6017, "eoc": 0.75, "att": 0.9, "mission": 1.0, "trust": 1.0, "practice": 2233.0, "corr": 0.49, "exit": 0.75, "temp": 0.67, "name": "Tariq Al-Omar"}, {"id": 648973, "school": "School A", "fac": 420, "level": "L1", "diag": 0.3051, "eoc": 0.65, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 1855.0, "corr": 0.244, "exit": 0.55, "temp": 0.91, "name": "Turki Al-Najjar"}, {"id": 648974, "school": "School A", "fac": 419, "level": "L2", "diag": 0.5169, "eoc": 0.67, "att": 1.0, "mission": 1.0, "trust": 0.75, "practice": 3087.0, "corr": 0.367, "exit": 0.66, "temp": 0.78, "name": "Adel Al-Saud"}, {"id": 648975, "school": "School A", "fac": 419, "level": "L1", "diag": 0.3305, "eoc": 0.63, "att": 0.89, "mission": 1.0, "trust": 0.88, "practice": 2174.0, "corr": 0.379, "exit": 0.63, "temp": 0.26, "name": "Anas Al-Hamdan"}, {"id": 648976, "school": "School A", "fac": 420, "level": "L1", "diag": 0.4915, "eoc": 0.69, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 3545.0, "corr": 0.445, "exit": 0.7, "temp": 0.58, "name": "Mansour Al-Yami"}, {"id": 648977, "school": "School A", "fac": 419, "level": "L1", "diag": 0.4237, "eoc": 0.62, "att": 0.81, "mission": 1.0, "trust": 0.88, "practice": 1674.0, "corr": 0.462, "exit": 0.66, "temp": 0.69, "name": "Mohammed Al-Ghamdi"}, {"id": 648978, "school": "School A", "fac": 420, "level": "L1", "diag": 0.3729, "eoc": 0.63, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2306.0, "corr": 0.281, "exit": 0.61, "temp": null, "name": "Rashid Al-Juhani"}, {"id": 648980, "school": "School A", "fac": 420, "level": "L1", "diag": 0.2797, "eoc": 0.5, "att": 0.85, "mission": 1.0, "trust": 1.0, "practice": 2026.0, "corr": 0.291, "exit": 0.45, "temp": 0.8, "name": "Turki Al-Habib"}, {"id": 648981, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4153, "eoc": 0.63, "att": 0.89, "mission": 1.0, "trust": 1.0, "practice": 2537.0, "corr": 0.43, "exit": 0.65, "temp": 0.22, "name": "Tariq Al-Dossari"}, {"id": 648982, "school": "School A", "fac": 420, "level": "L1", "diag": 0.5, "eoc": 0.68, "att": 0.88, "mission": 1.0, "trust": 0.83, "practice": 1822.0, "corr": 0.418, "exit": 0.64, "temp": 0.54, "name": "Faisal Al-Mutairi"}, {"id": 648983, "school": "School A", "fac": 420, "level": "L2", "diag": 0.4576, "eoc": 0.6, "att": 0.94, "mission": 1.0, "trust": 1.0, "practice": 2562.0, "corr": 0.319, "exit": 0.68, "temp": 0.38, "name": "Mishaal Al-Rashidi"}, {"id": 648984, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4915, "eoc": 0.65, "att": 0.71, "mission": 1.0, "trust": 0.89, "practice": 2202.0, "corr": 0.523, "exit": 0.66, "temp": 0.72, "name": "Yousef Al-Maliki"}, {"id": 648985, "school": "School A", "fac": 419, "level": "L1", "diag": 0.322, "eoc": 0.52, "att": 0.91, "mission": 1.0, "trust": 0.75, "practice": 2351.0, "corr": 0.356, "exit": 0.53, "temp": 0.3, "name": "Hamad Al-Rashidi"}, {"id": 649002, "school": "School A", "fac": 391, "level": "L2", "diag": 0.4661, "eoc": 0.59, "att": 0.48, "mission": 1.0, "trust": 1.0, "practice": 4574.0, "corr": 0.255, "exit": 0.69, "temp": 0.53, "name": "Fawaz Al-Nasser"}, {"id": 649003, "school": "School A", "fac": 391, "level": "L2", "diag": 0.7881, "eoc": 0.78, "att": 0.98, "mission": 1.0, "trust": 0.75, "practice": 2538.0, "corr": 0.405, "exit": 0.82, "temp": 1.0, "name": "Mishaal Al-Mutairi"}, {"id": 649005, "school": "School A", "fac": 391, "level": "L2", "diag": 0.3559, "eoc": 0.55, "att": 0.84, "mission": 1.0, "trust": 0.67, "practice": 2669.0, "corr": 0.355, "exit": 0.63, "temp": 0.73, "name": "Fawaz Al-Sulaiman"}, {"id": 649071, "school": "School A", "fac": 390, "level": "L1", "diag": 0.322, "eoc": 0.57, "att": 0.96, "mission": 1.0, "trust": 1.0, "practice": 2536.0, "corr": 0.277, "exit": 0.6, "temp": 0.97, "name": "Hassan Al-Mutairi"}, {"id": 649072, "school": "School A", "fac": 390, "level": "L2", "diag": 0.5424, "eoc": 0.73, "att": 0.86, "mission": 1.0, "trust": 0.86, "practice": 2737.0, "corr": 0.557, "exit": 0.74, "temp": 0.97, "name": "Khalid Al-Amri"}, {"id": 649073, "school": "School A", "fac": 421, "level": "L1", "diag": 0.3051, "eoc": 0.48, "att": 0.79, "mission": 1.0, "trust": 0.71, "practice": 5562.0, "corr": 0.263, "exit": 0.43, "temp": 0.85, "name": "Mohammed Al-Khaldi"}, {"id": 649074, "school": "School A", "fac": 390, "level": "L1", "diag": 0.4237, "eoc": 0.65, "att": 0.83, "mission": 0.8, "trust": 1.0, "practice": 2383.0, "corr": 0.371, "exit": 0.66, "temp": 0.56, "name": "Adel Al-Qahtani"}, {"id": 649568, "school": "School A", "fac": 419, "level": "L2", "diag": 0.6525, "eoc": 0.76, "att": 0.88, "mission": 1.0, "trust": 0.75, "practice": 3732.0, "corr": 0.313, "exit": 0.69, "temp": 0.63, "name": "Waleed Al-Zahrani"}, {"id": 651120, "school": "School A", "fac": 420, "level": "L1", "diag": 0.2797, "eoc": 0.5, "att": 0.8, "mission": 1.0, "trust": 1.0, "practice": 1683.0, "corr": 0.267, "exit": 0.47, "temp": 0.0, "name": "Rashid Al-Ghamdi"}, {"id": 651122, "school": "School A", "fac": 419, "level": "L1", "diag": 0.2966, "eoc": 0.36, "att": 0.91, "mission": 1.0, "trust": 0.75, "practice": 2462.0, "corr": 0.299, "exit": 0.44, "temp": 0.6, "name": "Suhail Al-Saleh"}, {"id": 651124, "school": "School A", "fac": 420, "level": "L1", "diag": 0.4153, "eoc": 0.72, "att": 0.86, "mission": 1.0, "trust": 1.0, "practice": 1955.0, "corr": 0.421, "exit": 0.7, "temp": 0.67, "name": "Abdullah Al-Mansour"}, {"id": 651557, "school": "School A", "fac": 421, "level": "L2", "diag": 0.7119, "eoc": 0.89, "att": 0.86, "mission": 1.0, "trust": 0.5, "practice": 4252.0, "corr": 0.398, "exit": 0.8, "temp": 0.5, "name": "Mohammed Al-Zahrani"}, {"id": 651558, "school": "School A", "fac": 390, "level": "L2", "diag": 0.678, "eoc": 0.82, "att": 0.83, "mission": 0.3, "trust": 0.17, "practice": 2562.0, "corr": 0.308, "exit": 0.74, "temp": 0.7, "name": "Omar Al-Sulaiman"}, {"id": 651559, "school": "School A", "fac": 390, "level": "L2", "diag": 0.5593, "eoc": 0.69, "att": 0.85, "mission": 1.0, "trust": 0.6, "practice": 3244.0, "corr": 0.492, "exit": 0.72, "temp": 0.54, "name": "Mohammed Al-Najjar"}, {"id": 652889, "school": "School A", "fac": 389, "level": "L1", "diag": 0.4322, "eoc": 0.56, "att": 0.95, "mission": 1.0, "trust": 1.0, "practice": 5310.0, "corr": 0.282, "exit": 0.61, "temp": 0.93, "name": "Bandar Al-Zahrani"}, {"id": 652890, "school": "School A", "fac": 389, "level": "L1", "diag": 0.2288, "eoc": 0.54, "att": 0.91, "mission": 1.0, "trust": 1.0, "practice": 1985.0, "corr": 0.292, "exit": 0.51, "temp": 0.87, "name": "Turki Al-Amri"}, {"id": 652894, "school": "School A", "fac": 420, "level": "L1", "diag": 0.322, "eoc": 0.57, "att": 0.98, "mission": 1.0, "trust": 1.0, "practice": 1648.0, "corr": 0.527, "exit": 0.54, "temp": 0.96, "name": "Saif Al-Otaibi"}, {"id": 652896, "school": "School A", "fac": 420, "level": "L1", "diag": 0.5932, "eoc": 0.68, "att": 0.94, "mission": 1.0, "trust": 0.88, "practice": 2401.0, "corr": 0.309, "exit": 0.69, "temp": 0.73, "name": "Mansour Al-Harbi"}, {"id": 657634, "school": "School A", "fac": 419, "level": "L1", "diag": 0.2966, "eoc": 0.48, "att": 0.94, "mission": 1.0, "trust": 0.63, "practice": 2703.0, "corr": 0.294, "exit": 0.62, "temp": 0.45, "name": "Tariq Al-Asiri"}];
+const FAC_NAMES = {"334": "Anas", "335": "Badr", "336": "Ziyad", "337": "Majed", "346": "Saud", "347": "Maan", "348": "Hassan", "349": "Bandar", "368": "Tariq", "369": "Salman", "384": "Marwan", "388": "Rakan", "389": "Omar", "390": "Faisal", "391": "Ayman", "419": "Raed", "420": "Nawaf", "421": "Mishaal", "425": "Sami", "502": "Abdulrahman", "503": "Zaid"};
+function facName(f){return (FAC_NAMES[f]||FAC_NAMES[String(f)]||"Facilitator")+" - "+f;}</script>
+<script>
+/* ---------- i18n ---------- */
+const AR={
+ "Facilitators Operations Dashboard":"لوحة عمليات الميسّرين",
+ "Turning the semester dataset into who needs attention, why, and what to do next.":"تحويل بيانات الفصل الدراسي إلى: من يحتاج اهتمامًا، ولماذا، وما الإجراء التالي.",
+ "students":"طالب","schools":"مدارس","classes":"فصول","Semester snapshot":"لقطة الفصل الدراسي",
+ "Management":"الإدارة","School Leader":"قائد المدرسة","Facilitator":"الميسّر","Student":"الطالب","School":"المدرسة","Students":"الطلاب",
+ "Viewing as":"العرض بصفة","Search…":"بحث…","Clear filters ✕":"مسح عوامل التصفية ✕","No matches":"لا نتائج","Clear":"مسح","selected":"محدد",
+ "Network overview · all 5 schools":"نظرة عامة · جميع المدارس الخمس",
+ "all classes":"جميع الفصول","selected classes":"الفصول المحددة","students selected":"طالب محدد","your students":"طلابك","Classes in":"فصول",
+ "Avg learning gain":"متوسط التحسّن التعليمي","EOC − Diagnostic":"نهاية المقرر − التشخيصي","pts":"نقطة",
+ "Avg EOC mastery":"متوسط إتقان نهاية المقرر","end-of-course":"نهاية المقرر","Need attention":"بحاجة إلى اهتمام",
+ "high":"مرتفع","medium":"متوسط","Avg attendance":"متوسط الحضور",
+ "Attention mix":"توزيع الأولوية","How the cohort splits by priority today.":"كيف تنقسم المجموعة حسب الأولوية اليوم.",
+ "On track":"على المسار","Watch/Medium":"مراقبة/متوسط","High priority":"أولوية عالية","Watch":"مراقبة","High":"عالية","Medium":"متوسطة",
+ "Mission completion":"إكمال المهام","Practice accuracy":"دقة التدريب","Exit-ticket mastery":"إتقان تذكرة الخروج","Trust":"الثقة","Classroom temp":"المشاركة",
+ "Top priority students":"الطلاب ذوو الأولوية القصوى","None flagged high 🎉":"لا يوجد طلاب بأولوية عالية 🎉","network-wide":"جميع المدارس","All schools":"جميع المدارس",
+ "Learning gain ▸ ranked":"التحسّن التعليمي ▸ مرتبة","EOC mastery":"إتقان نهاية المقرر","Attendance":"الحضور","facilitators":"ميسّر",
+ "Schools — ranked by learning gain":"المدارس — مرتبة حسب التحسّن التعليمي","Classes — ranked by learning gain":"الفصول — مرتبة حسب التحسّن التعليمي",
+ "All facilitators — ranked across the network":"كل الميسّرين — مرتّبون جميع المدارس",
+ "Every facilitator network-wide, ranked by the overall composite score. Coaching attention should follow the bottom.":"كل ميسّر جميع المدارس، مرتّب حسب التقييم الإجمالي المركّب. يجب أن يتجه الدعم نحو أسفل القائمة.",
+ "The network at a glance. Spot which schools add the most value and which carry the most at-risk load.":"جميع المدارس بلمحة. حدّد المدارس الأكثر إضافةً للقيمة والأكثر تحمّلًا للطلاب المعرّضين للخطر.",
+ "Compare facilitators on a like-for-like basis. Coaching attention should follow the bottom of this list.":"قارن الميسّرين على أساس متكافئ. يجب أن يتجه الدعم نحو أسفل القائمة.",
+ "Sorted by":"مرتبة حسب","Click any row to drill in. Learning gain is the value-add signal — it controls for where students started.":"اضغط أي صف للتعمّق. التحسّن التعليمي هو مؤشر القيمة المضافة — فهو يراعي نقطة بداية الطلاب.",
+ "Student action list":"قائمة إجراءات الطلاب","Ranked by attention priority. Each student shows why they're flagged and the next action.":"مرتبة حسب أولوية الاهتمام. يوضح كل طالب سبب الإشارة إليه والإجراء التالي.",
+ "Priority":"الأولوية","Why":"السبب","Gain":"التحسّن","Att":"حضور","Acc":"دقة","Miss":"مهام","Recommended next action":"الإجراء التالي الموصى به",
+ "Score dropped since diagnostic":"انخفضت الدرجة منذ التشخيص","Almost no learning gain":"تحسّن تعليمي شبه معدوم","Attendance below 80%":"الحضور أقل من 80٪",
+ "Practising but not mastering":"يتدرّب لكنه لا يُتقن","Missions incomplete":"مهام غير مكتملة","Low trust in the experience":"ثقة منخفضة في التجربة",
+ "Low classroom engagement":"تفاعل منخفض في الفصل","Working hard, low return":"مجهود كبير بنتيجة قليلة",
+ "Low end-of-course mastery":"إتقان منخفض في نهاية المقرر","Very little practice volume":"حجم تدريب قليل جدًا",
+ "Keep momentum — recognise progress publicly.":"حافظ على الزخم — اعترف بالتقدّم علنًا.",
+ "1:1 conversation — find the breaking point, rebuild a plan this week.":"محادثة فردية — حدّد نقطة الانكسار وأعد بناء خطة هذا الأسبوع.",
+ "Re-diagnose gaps; set 2 targeted missions and check in Friday.":"أعد تشخيص الفجوات؛ حدّد مهمتين موجّهتين وتابع يوم الجمعة.",
+ "Call home re: attendance; pair with a peer to re-engage.":"اتصل بالأهل بخصوص الحضور؛ اربطه بزميل لإعادة إشراكه.",
+ "Switch from volume to guided practice on weak concepts.":"انتقل من الكمية إلى التدريب الموجّه على المفاهيم الضعيفة.",
+ "Effort is there — coach technique, not effort. Review wrong answers together.":"المجهود موجود — درّب على الأسلوب لا المجهود. راجعوا الأخطاء معًا.",
+ "Unblock missions — is it difficulty, time, or motivation?":"أزل عوائق المهام — هل السبب الصعوبة أم الوقت أم الدافعية؟",
+ "Check in on how they feel about the class; act on one piece of feedback.":"اطمئن على شعوره تجاه الفصل؛ نفّذ ملاحظة واحدة من ملاحظاته.",
+ "Seat/group change; give a visible role in class.":"غيّر مكان الجلوس/المجموعة؛ امنحه دورًا واضحًا في الفصل.","Review with student.":"راجع مع الطالب.",
+ "📊 Class performance — where you stand & what to do":"📊 أداء الفصل — أين تقف وما الذي يجب فعله",
+ "Each chart compares your class (teal) to the whole network (amber). Red marks the students/range needing action.":"يقارن كل رسم فصلك (الأخضر) ببقية الطلاب كاملة (الكهرماني). يشير الأحمر إلى الطلاب/النطاق الذي يحتاج إجراءً.",
+ "Diagnostic → EOC (your value-add)":"التشخيصي ← نهاية المقرر (قيمتك المضافة)","Qudrat Level mix":"توزيع مستوى قدرات","Diagnostic result":"نتيجة التشخيصي",
+ "EOC Overall result":"نتيجة نهاية المقرر الإجمالية","Attendance %":"نسبة الحضور","Mission Completion %":"نسبة إكمال المهام","Trust %":"نسبة الثقة",
+ "Practice attempts #":"عدد محاولات التدريب","Correct Practice %":"نسبة التدريب الصحيح","Exit Ticket Correctness %":"نسبة صحة تذكرة الخروج","Classroom Temp %":"نسبة المشاركة",
+ "This is the metric Noon judges you on: how far you moved students from where they started.":"هذا هو المقياس الذي تقيّمك به نون: مدى تقدّمك بالطلاب عن نقطة بدايتهم.",
+ "The blend of learning journeys you manage — context for every other chart.":"مزيج رحلات التعلّم التي تديرها — سياق لبقية الرسوم.",
+ "Starting point, not your score. Lower start = bigger growth opportunity.":"نقطة البداية وليست تقييمك. بداية أدنى = فرصة تحسّن أكبر.",
+ "Final mastery. Focus the red tail before the next EOC.":"الإتقان النهائي. ركّز على الذيل الأحمر قبل نهاية المقرر القادمة.",
+ "Students under 80% rarely recover — call home first.":"الطلاب دون 80٪ نادرًا ما يتعافون — اتصل بالأهل أولًا.",
+ "Low completion = a blocker. Ask: difficulty, time, or motivation?":"إكمال منخفض = عائق. اسأل: الصعوبة أم الوقت أم الدافعية؟",
+ "Trust dips come before disengagement — check in this week.":"انخفاض الثقة يسبق فقدان الاندماج — اطمئن عليه هذا الأسبوع.",
+ "Low volume = no practice routine. Very high volume + low accuracy = grinding.":"كمية منخفضة = لا روتين تدريب. كمية عالية جدًا + دقة منخفضة = إجهاد دون فهم.",
+ "Low accuracy with high volume = wrong technique, not low effort.":"دقة منخفضة مع كمية عالية = أسلوب خاطئ وليس قلة مجهود.",
+ "Session-level mastery. Flag the concepts where the class dips so the teacher can revisit them.":"إتقان على مستوى الحصة. ارصد المفاهيم التي ينخفض فيها الفصل لينبّه المعلم لمراجعتها.",
+ "Energy in the room. Low temp → change seating, pace, or format.":"طاقة الغرفة. مشاركة منخفضة ← غيّر الجلوس أو الإيقاع أو الصيغة.",
+ "Your class:":"فصلك:","Network:":"بقية الطلاب:","You:":"أنت:","Network avg:":"متوسط بقية الطلاب:","below threshold":"دون الحد","low-practice":"تدريب منخفض",
+ "low-energy sessions flagged":"حصص منخفضة الطاقة","Your value-add vs the network benchmark.":"قيمتك المضافة مقابل معيار بقية الطلاب.",
+ "Teal = your class · Amber = network · Red = needs action.":"الأخضر = فصلك · الكهرماني = بقية الطلاب · الأحمر = يحتاج إجراءً.",
+ "▲ above network":"▲ أعلى من بقية الطلاب","▼ below network":"▼ أدنى من بقية الطلاب","your class temperature":"مشاركة فصلك",
+ "Diagnostic":"التشخيصي","EOC":"نهاية المقرر","students.":"طالب","Qudrat":"قدرات","Level":"المستوى",
+ "Performance Dashboard":"لوحة الأداء","Action Plan":"خطة العمل",
+ "This is where you'll turn dashboard insights into a daily action plan for your students. (Coming next)":"هنا ستحوّل رؤى لوحة الأداء إلى خطة عمل يومية لطلابك. (قيد التطوير)",
+ "Doing great":"أداء ممتاز","Mid performance":"أداء متوسط","Low performance":"أداء منخفض",
+ "Where they're low":"موطن الضعف","Suggested action":"الإجراء المقترح",
+ "Stretch them: peer-teaching roles, harder missions, and keep recognition visible.":"ادفعهم أبعد: أدوار تعليم الأقران، مهام أصعب، وحافظ على التقدير الظاهر.",
+ "Close specific gaps: targeted practice on weak concepts plus a weekly check-in.":"أغلق الفجوات المحددة: تدريب موجّه على المفاهيم الضعيفة مع متابعة أسبوعية.",
+ "Intervene now: a 1:1 this week, contact home, and rebuild routines — see per-student actions.":"تدخّل الآن: جلسة فردية هذا الأسبوع، تواصل مع الأهل، وأعد بناء الروتين — انظر الإجراءات لكل طالب.",
+ "Learning gain":"التحسّن التعليمي","Exit tickets":"تذاكر الخروج","Overall low":"أداء منخفض عام",
+ "Re-teach core concepts; set 3 mastery missions.":"أعد تدريس المفاهيم الأساسية؛ حدّد 3 مهام إتقان.",
+ "Review wrong answers together; fix technique.":"راجعوا الأخطاء معًا؛ صحّح الأسلوب.",
+ "Daily 5-min recap on weak topics.":"مراجعة يومية 5 دقائق على المواضيع الضعيفة.",
+ "Call home; pair with a peer.":"اتصل بالأهل؛ اربطه بزميل.",
+ "Unblock missions; shrink to 2 priority tasks.":"أزل عوائق المهام؛ قلّصها إلى مهمتين أساسيتين.",
+ "1:1 to re-diagnose and rebuild a plan.":"جلسة فردية لإعادة التشخيص وبناء خطة.",
+ "Check in on how they feel; act on one piece of feedback.":"اطمئن على شعوره؛ نفّذ ملاحظة واحدة.",
+ "Overall low — 1:1 to set clear targets.":"أداء منخفض عام — جلسة فردية لتحديد أهداف واضحة.",
+ "Give star":"امنح نجمة","Add supervisor comment…":"أضف تعليق المشرف…",
+ "Overall":"الإجمالي","Qudrat Level":"مستوى قدرات",
+ "Set a daily practice routine (15 min).":"حدّد روتين تدريب يومي (15 دقيقة).",
+ "Change seating/pace; give a visible role.":"غيّر الجلوس/الإيقاع؛ امنحه دورًا واضحًا.",
+ "1:1 to set clear targets from the diagnostic.":"جلسة فردية لتحديد أهداف واضحة من التشخيصي.",
+ "Qudrat Level is a learning-journey assignment, not a performance tier.":"مستوى قدرات هو تصنيف لرحلة التعلّم وليس مستوى أداء.",
+ "All students — note & next action":"كل الطلاب — الملاحظة والإجراء التالي","Main note":"الملاحظة الأساسية",
+ "Every student in your class at a glance, with the main note and the next action.":"كل طالب في فصلك بلمحة، مع الملاحظة الأساسية والإجراء التالي.",
+ "Daily Action Plan":"خطة العمل الأسبوعية",
+ "Today's plan — 5 lowest-performing students":"خطة هذا الأسبوع — أضعف ٥ طلاب أداءً",
+ "Sorted by overall score, with where they're weak and a to-do per student.":"مرتّبون حسب التقييم الإجمالي، مع موطن الضعف ومهمة لكل طالب.",
+ "Teacher comment (required)":"تعليق المعلم (إلزامي)","Comment required before marking as done":"التعليق إلزامي قبل وضع علامة الإنجاز",
+ "Supervisor comment (optional)":"تعليق المشرف (اختياري)",
+ "Today's overview":"نظرة اليوم","Today":"اليوم","Yesterday":"أمس","Pick a date":"اختر تاريخًا",
+ "Daily snapshot of the trackable signals, compared to each student's own average.":"لقطة يومية للمؤشرات القابلة للمتابعة، مقارنةً بمعدّل كل طالب.",
+ "Absent today":"غائبون اليوم","Follow up on absences and take action.":"تابع الغياب واتخذ إجراءً.","All students are present 🎉":"جميع الطلاب حاضرون 🎉",
+ "Low performing today":"أداء منخفض اليوم","Over-achieving today":"أداء متميّز اليوم","Normal":"عادي",
+ "below their own average":"دون معدّله الخاص","above their own average":"فوق معدّله الخاص","around their own average":"قريب من معدّله الخاص",
+ "Perfect attendance record":"سجل حضور كامل","100% correct practice today":"دقة تدريب 100% اليوم","All missions done today":"أنجز كل المهام اليوم",
+ "Perfect accuracy today":"دقة كاملة اليوم","Full participation today":"مشاركة كاملة اليوم",
+ "No missions done today":"لم ينجز أي مهمة اليوم","Very low accuracy today":"دقة متدنّية جدًا اليوم","No participation today":"لم يشارك اليوم",
+ "WhatsApp":"واتساب","Call":"اتصال","Send praise":"إرسال شكر","Praise sent to":"تم إرسال الشكر إلى",
+ "AI-assisted draft — review before sending":"مسودة بمساعدة الذكاء الاصطناعي — راجعها قبل الإرسال","Copy":"نسخ",
+ "Explain":"اشرح","Parent message":"رسالة لولي الأمر",
+ "Show all metrics":"عرض كل المؤشرات","Show key metrics only":"عرض المؤشرات الأساسية فقط",
+ "Your class":"فصلك","The rest":"بقية الطلاب",
+ "Improved since":"تحسّن منذ التدخل","No change yet — keep following up":"لا تغيّر بعد — واصل المتابعة",
+ "students":"طالب",
+ "Others:":"بقية الطلاب:","Others avg:":"متوسط بقية الطلاب:",
+ "▲ above the rest":"▲ أعلى من بقية الطلاب","▼ below the rest":"▼ أدنى من بقية الطلاب",
+ "Your value-add vs the rest of the students.":"قيمتك المضافة مقابل بقية الطلاب.",
+ "Teal = your class · Amber = the rest · Red = needs action.":"الأخضر = فصلك · الكهرماني = بقية الطلاب · الأحمر = يحتاج إجراءً.",
+ "Each chart compares your class (teal) to the rest of the students (amber). Red marks the students/range needing action.":"يقارن كل رسم فصلك (الأخضر) ببقية الطلاب (الكهرماني). يشير الأحمر إلى الطلاب/النطاق الذي يحتاج إجراءً.",
+ "Compare with:":"المقارنة مع:","Same school":"نفس المدرسة","Rank":"المرتبة",
+ "Sit with him to set a simple goal and nudge him to ask the teacher for a foundation plan.":"اجلس معه وحدّد هدفًا بسيطًا، وشجّعه على طلب خطة تأسيس من المعلم.",
+ "Connect him with the teacher to review the hard concepts; encourage him to ask more in class.":"وصّله بالمعلم لمراجعة المفاهيم الصعبة، وشجّعه على السؤال أكثر في الحصة.",
+ "Reach out to the student/home about absences and re-engage him.":"تواصل مع الطالب/الأهل بخصوص الغياب وأعد إشراكه.",
+ "Ask why missions stall (time, difficulty, or motivation) and remove the blocker.":"اعرف سبب تعثّر المهام (وقت/صعوبة/دافعية) وذلّل العائق.",
+ "Check in on how he feels about class and relay his feedback to the teacher.":"اطمئن على شعوره تجاه الحصة وانقل ملاحظاته للمعلم.",
+ "Encourage a simple daily practice habit and follow up.":"شجّعه على روتين تدريب يومي بسيط وتابع التزامه.",
+ "Encourage him to review his mistakes with the teacher and ask about the right approach.":"شجّعه على مراجعة أخطائه مع المعلم والسؤال عن الطريقة الصحيحة.",
+ "Note where he loses focus in class and prompt him to ask the moment he is confused.":"لاحظ أين يفقد التركيز في الحصة وحثّه على السؤال فور الالتباس.",
+ "Involve him more in class, give him a role, and encourage him to participate and ask.":"أشركه أكثر في الحصة وامنحه دورًا، وشجّعه على المشاركة والسؤال.",
+ "Sit with him to understand the drop and reconnect him with the teacher for a plan this week.":"اجلس معه لفهم سبب التراجع وأعد ربطه بالمعلم لخطة هذا الأسبوع.",
+ "Track his progress closely and encourage him to ask the teacher for a review plan.":"تابع تقدّمه عن قرب وشجّعه على طلب خطة مراجعة من المعلم.",
+ "His effort is high — connect him with the teacher to adjust technique; encourage asking over repeating.":"جهده عالٍ — وصّله بالمعلم لضبط الأسلوب، وشجّعه على السؤال بدل التكرار.",
+ "Keep the momentum — recognise his progress in front of everyone.":"حافظ على الزخم — اعترف بتقدّمه أمام الجميع.",
+ "Review the case with the student.":"راجع الحالة مع الطالب.",
+ "all 10 metrics":"كل المقاييس العشرة","baseline":"خط الأساس",
+ "Avg diagnostic":"متوسط التشخيصي","Avg mission completion":"متوسط إكمال المهام","Avg trust":"متوسط الثقة",
+ "Avg practice attempts":"متوسط محاولات التدريب","Avg correct practice":"متوسط دقة التدريب","Avg exit ticket":"متوسط تذكرة الخروج","Avg classroom temp":"متوسط المشاركة",
+ "Other classes (same school)":"بقية فصول المدرسة","All classes":"كل الفصول","Same class · last week":"نفس الفصل · الأسبوع الماضي","Same class · start of semester":"نفس الفصل · بداية الفصل",
+ "Other schools":"بقية المدارس","Last week":"الأسبوع الماضي","Start of semester":"بداية الفصل","Same school · last week":"نفس المدرسة · الأسبوع الماضي","Same school · start of semester":"نفس المدرسة · بداية الفصل",
+ "Overall score":"التقييم الإجمالي","Diag":"تشخيصي","Att":"حضور","Missions":"المهام","Practice":"التدريب","Accuracy":"الدقة","Exit":"الخروج","Temp":"المشاركة",
+ "Ranked by the Overall score — a composite of all 10 metrics. Click any column to re-sort, or any row to drill in.":"مرتّبة حسب التقييم الإجمالي — مؤشر مركّب من كل المقاييس العشرة. اضغط أي عمود لإعادة الترتيب، أو أي صف للتعمّق.",
+ "Each student is scored on all 10 metrics (Overall), with priority, why, and the next action.":"كل طالب مُقيَّم على كل المقاييس العشرة (الإجمالي)، مع الأولوية والسبب والإجراء التالي."
+};
+function tr(s){return state.lang=='ar'?(AR[s]!=null?AR[s]:s):s;}
+function toggleLang(){state.lang=state.lang=='ar'?'en':'ar'; render();}
+
+/* ---------- sidebar / tabs ---------- */
+function sidebar(){
+  const actionOn = state.role=='fac';
+  const tabs=[];
+  if(actionOn) tabs.push(['today','🗓️ '+tr("Today's overview"),true]);
+  tabs.push(['action','📋 '+tr('Daily Action Plan'),actionOn]);
+  tabs.push(['dashboard','📊 '+tr('Performance Dashboard'),true]);
+  return tabs.map(([k,lbl,on])=>`<button data-tab="${k}" class="${state.tab==k?'active':''}" ${on?`onclick="setTab('${k}')"`:'disabled'}>${lbl}</button>`).join('');
+}
+function setTab(t){state.tab=t; render();}
+function toggleSb(){state.sbOpen=!state.sbOpen; render();}
+function toggleStar(id){state.stars[id]=!state.stars[id]; render();}
+function toggleTodo(id){
+  state.todoDone[id]=!state.todoDone[id];
+  if(state.todoDone[id]){ state.outcomes=state.outcomes||{}; if(!state.outcomes[id]) state.outcomes[id]=Date.now(); }
+  render();
+}
+/* did the intervention help? deterministic dummy follow-up after a task is completed */
+function impact(id){
+  const o=(state.outcomes||{})[id]; if(!o) return null;
+  const seed=hashStr(id+'#imp'); const improved=rng(seed)<0.72; const mag=2+Math.floor(rng(seed+1)*7);
+  return {improved, mag};
+}
+function setComment(id,v){state.comments[id]=v;}
+function toggleNote(id){state.openNote=state.openNote==id?null:id; state.needComment=null; render();}
+/* performance score (outcome + gain + accuracy + mastery) → category */
+function perf(s){return compositeScore(s);}   // now blends ALL metrics
+function perfCat(s){const p=perf(s); return p>=0.70?'great':(p<0.60?'low':'mid');}
+
+/* per-KPI segmentation for the Action Plan */
+const AP_METRICS=[
+  {k:'overall',ic:'📊',label:'Overall'},
+  {k:'level',ic:'🧭',label:'Qudrat Level'},
+  {k:'diag',ic:'🩺',label:'Diagnostic result',g:.55,l:.40},
+  {k:'eoc',ic:'🏁',label:'EOC Overall result',g:.70,l:.55},
+  {k:'att',ic:'📅',label:'Attendance %',g:.95,l:.80},
+  {k:'mission',ic:'✅',label:'Mission Completion %',g:.90,l:.60},
+  {k:'trust',ic:'🤝',label:'Trust %',g:.80,l:.50},
+  {k:'practice',ic:'🔁',label:'Practice attempts #',g:3000,l:1200},
+  {k:'corr',ic:'🎯',label:'Correct Practice %',g:.50,l:.35},
+  {k:'exit',ic:'🎫',label:'Exit Ticket Correctness %',g:.72,l:.55},
+  {k:'temp',ic:'🌡️',label:'Classroom Temp %',g:.80,l:.50}
+];
+const METRIC_LOW_ACTION={
+  diag:'Sit with him to set a simple goal and nudge him to ask the teacher for a foundation plan.',
+  eoc:'Connect him with the teacher to review the hard concepts; encourage him to ask more in class.',
+  att:'Reach out to the student/home about absences and re-engage him.',
+  mission:'Ask why missions stall (time, difficulty, or motivation) and remove the blocker.',
+  trust:'Check in on how he feels about class and relay his feedback to the teacher.',
+  practice:'Encourage a simple daily practice habit and follow up.',
+  corr:'Encourage him to review his mistakes with the teacher and ask about the right approach.',
+  exit:'Note where he loses focus in class and prompt him to ask the moment he is confused.',
+  temp:'Involve him more in class, give him a role, and encourage him to participate and ask.'
+};
+function apCat(s,m){
+  if(m.k=='overall') return perfCat(s);
+  const v=s[m.k]; if(v==null) return 'mid';
+  return v>=m.g?'great':(v<m.l?'low':'mid');
+}
+/* deterministic dummy week-over-week change (current minus last week), −8..+8 pts */
+function seedRand(id){const x=Math.sin(id*12.9898+78.233)*43758.5453; return x-Math.floor(x);}
+function weekChange(s){return (seedRand(s.id)-0.5)*0.16;}
+
+/* executive summary: WHY flagged · the trend · what's wrong · how to fix — vs classmates & last week */
+function execSummary(s){
+  const ar=state.lang=='ar';
+  const peers=scoped().filter(p=>p.id!=s.id), pm=k=>meanOf(peers,k);
+  const score=compositeScore(s), classAvg=mean(peers.map(compositeScore));
+  const parts=[];
+  // 1) why he's flagged — vs the class
+  const belowBy=classAvg!=null?Math.round((classAvg-score)*100):0;
+  parts.push(ar
+    ? `تقييمه ${pct(score)} — أدنى من متوسط الفصل (${pct(classAvg)}) بـ ${belowBy} نقطة، لذلك ظهر ضمن الأضعف.`
+    : `Scoring ${pct(score)} — ${belowBy} pts under the class average (${pct(classAvg)}), which is why he's flagged.`);
+  // 2) the trend — vs last week
+  const wc=weekChange(s);
+  if(wc<-0.005) parts.push(ar
+    ? `<span class="urgent">⚠ انخفض ${Math.round(-wc*100)} نقطة عن الأسبوع الماضي — يتطلب تدخّلًا فوريًا.</span>`
+    : `<span class="urgent">⚠ Down ${Math.round(-wc*100)} pts vs last week — needs immediate action.</span>`);
+  else if(wc>0.02) parts.push(ar
+    ? `تحسّن طفيف عن الأسبوع الماضي لكنه ما زال دون مستوى الفصل.`
+    : `Slightly up vs last week but still below the class.`);
+  // 3) what's wrong — biggest gaps vs classmates
+  const gaps=AP_METRICS.filter(m=>m.l!=null&&s[m.k]!=null).map(m=>{
+    const avg=pm(m.k); if(avg==null) return null;
+    const isC=m.k=='practice';
+    return {m, gap:isC?(s[m.k]-avg)/(avg||1):s[m.k]-avg, below:s[m.k]<avg};
+  }).filter(x=>x&&x.below).sort((a,b)=>a.gap-b.gap).slice(0,2);
+  if(gaps.length){
+    const ph=x=>{const lbl=tr(x.m.label).replace('نسبة ','').replace('Avg ','');
+      return x.m.k=='practice'?(ar?`${lbl} أقل بكثير`:`much lower ${lbl.toLowerCase()}`)
+        :(ar?`${lbl} (−${Math.round(Math.abs(x.gap)*100)} نقطة)`:`${lbl.toLowerCase()} (−${Math.round(Math.abs(x.gap)*100)} pts)`);};
+    parts.push(ar?`أبرز الفجوات مقابل زملائه: ${gaps.map(ph).join(' و')}.`:`Biggest gaps vs classmates: ${gaps.map(ph).join(' & ')}.`);
+    const act=METRIC_LOW_ACTION[gaps[0].m.k];
+    if(act) parts.push(ar?`الحل: ${tr(act)}`:`Fix: ${tr(act)}`);
+  } else {
+    parts.push(ar?`لا يوجد سبب واحد واضح — جلسة فردية لتحديد الفجوة.`:`No single clear driver — hold a 1:1 to pinpoint the gap.`);
+  }
+  return parts.join(' ');
+}
+
+/* the 1–2 MOST severe weak metrics → tag (icon+label) + its targeted action.
+   Kept short on purpose so the supervisor isn't overwhelmed. */
+function weakTags(s){
+  const peers=scoped().filter(p=>p.id!=s.id);
+  const tags=AP_METRICS.filter(m=>m.l!=null && s[m.k]!=null && s[m.k]<m.l)
+    .map(m=>{
+      const avg=meanOf(peers,m.k);
+      const sev=avg==null?(m.l-s[m.k]):(m.k=='practice'?(avg-s[m.k])/(avg||1):avg-s[m.k]); // how far below the class
+      return {k:m.k, ic:m.ic, label:m.label, action:METRIC_LOW_ACTION[m.k]||'Review the case with the student.', sev};
+    })
+    .sort((a,b)=>b.sev-a.sev)
+    .slice(0,2);
+  if(!tags.length){const w=whereLow(s); tags.push({k:'overall', ic:'📊', label:'Overall', action:w.action});}
+  return tags;
+}
+function lowInfo(s,m){
+  if(m.k=='overall') return whereLow(s);
+  return {areas:[m.label], action:METRIC_LOW_ACTION[m.k]||'Overall low — 1:1 to set clear targets.'};
+}
+function setApMetric(k){state.apMetric=k; render();}
+/* for a low performer: which area drives it + a targeted action */
+function whereLow(s){
+  const g=(s.eoc!=null&&s.diag!=null)?s.eoc-s.diag:1;
+  const checks=[
+    ['EOC mastery', s.eoc!=null&&s.eoc<0.55, METRIC_LOW_ACTION.eoc],
+    ['Practice accuracy', s.corr!=null&&s.corr<0.35, METRIC_LOW_ACTION.corr],
+    ['Learning gain', g<0.05, 'Sit with him to understand the drop and reconnect him with the teacher for a plan this week.'],
+    ['Exit tickets', s.exit!=null&&s.exit<0.55, METRIC_LOW_ACTION.exit],
+    ['Mission completion', s.mission!=null&&s.mission<0.6, METRIC_LOW_ACTION.mission],
+    ['Attendance', s.att!=null&&s.att<0.8, METRIC_LOW_ACTION.att],
+    ['Trust', s.trust!=null&&s.trust<0.5, METRIC_LOW_ACTION.trust]
+  ].filter(c=>c[1]);
+  if(!checks.length) return {areas:['Overall low'], action:'Review the case with the student.'};
+  return {areas:checks.slice(0,2).map(c=>c[0]), action:checks[0][2]};
+}
+
+function actionPlanView(data){
+  const m=AP_METRICS.find(x=>x.k===state.apMetric)||AP_METRICS[0];
+  const metricBar=`<div class="apmetrics">${AP_METRICS.map(x=>`<button class="apmetric ${x.k==m.k?'active':''}" onclick="setApMetric('${x.k}')"><span class="ic">${x.ic}</span>${tr(x.label)}</button>`).join('')}</div>`;
+  const n=data.length||1;
+  // first list: the 5 lowest performers (by overall score) — one card per student,
+  // each weak area is its own task (tag + action) with independent check + mandatory comment
+  const worst=[...data].sort((x,y)=>compositeScore(x)-compositeScore(y)).slice(0,5);
+  const worstList=worst.map(s=>{
+    const tags=weakTags(s), total=tags.length, doneN=tags.filter(t=>state.todoDone[s.id+'-'+t.k]).length;
+    const tasks=tags.map(t=>{
+      const id=s.id+'-'+t.k, done=state.todoDone[id], imp=done?impact(id):null;
+      const impHTML = imp ? `<div class="impact ${imp.improved?'up':'flat'}">${imp.improved?`📈 ${tr('Improved since')} · +${imp.mag}%`:`➖ ${tr('No change yet — keep following up')}`}</div>` : '';
+      return `<div class="task ${done?'done':''}">
+        <div class="taskmain">
+          <button class="chk ${done?'on':''}" onclick="toggleTodo('${id}')">${done?'✓':''}</button>
+          <span class="tag"><span>${t.ic}</span> ${tr(t.label)}</span>
+          <span class="taskaction">${tr(t.action)}</span>
+        </div>${impHTML}</div>`;}).join('');
+    // one optional supervisor comment per student
+    const comment=`<input class="cmt apcomment" placeholder="${tr('Supervisor comment (optional)')}" value="${(state.comments[s.id]||'').replace(/"/g,'&quot;')}" oninput="setComment(${s.id},this.value)">`;
+    return `<div class="apstudent">
+      <div class="apstudent-head">${avatar(s)}<b>${s.name}</b> <span class="flag">${facName(s.fac)} · <b style="color:${scoreColor(compositeScore(s))}">${pct(compositeScore(s))}</b></span>
+        <span class="ai-actions">
+          <button class="actbtn ai" onclick="aiExplain(${s.id})" title="${tr('Explain')}">✨ ${tr('Explain')}</button>
+          <button class="actbtn ai" onclick="aiMessage(${s.id})" title="${tr('Parent message')}">✨ ${tr('Parent message')}</button>
+        </span>
+        <span class="prog ${doneN==total?'all':''}">${doneN}/${total}</span></div>
+      <div class="execsum">${execSummary(s)}</div>
+      ${tasks}
+      ${comment}</div>`;}).join('');
+  const rosterCard=`<div class="card full"><h3>🚩 ${tr("Today's plan — 5 lowest-performing students")} — ${scopeText()}</h3>
+    <div class="desc">${tr("Sorted by overall score, with where they're weak and a to-do per student.")}</div>
+    ${worstList||`<span class="flag">—</span>`}</div>`;
+  // Qudrat Level is categorical — show journey groups, not great/mid/low
+  if(m.k=='level'){
+    const g=groupBy(data,'level'), keys=Object.keys(g).sort();
+    const groups=keys.map(k=>`<div class="card full"><h3><span class="dot" style="background:var(--blue)"></span> ${tr('Qudrat')} ${k.replace('L',tr('Level')+' ')} · ${g[k].length} (${Math.round(g[k].length/n*100)}%)</h3>
+      <div class="pills">${g[k].map(s=>`<span class="namepill">${avatar(s).replace('avatar','avatar sm')}${s.name}</span>`).join('')}</div></div>`).join('');
+    return rosterCard+`<div class="card full"><h3>📋 ${tr('Daily Action Plan')} — ${scopeText()}</h3>${metricBar}
+      <div class="apbrief">${tr('Qudrat Level is a learning-journey assignment, not a performance tier.')}</div></div>${groups}`;
+  }
+  const cats={great:[],mid:[],low:[]};
+  data.forEach(s=>cats[apCat(s,m)].push(s));
+  const pc=k=>Math.round(cats[k].length*100/n);
+  const avgG=meanOf(data,'eoc')-meanOf(data,'diag');
+  const brief = m.k=='overall'
+    ? (state.lang=='ar'
+      ? `فصلك المكوّن من ${n} طالبًا حقّق تحسّنًا بمتوسط +${f2(avgG)} نقطة. ${cats.great.length} طالبًا (${pc('great')}٪) أداؤهم ممتاز، و${cats.mid.length} (${pc('mid')}٪) متوسط، و${cats.low.length} (${pc('low')}٪) بحاجة إلى دعم عاجل.`
+      : `Your class of ${n} added <b>+${f2(avgG)} pts</b> on average. <b>${cats.great.length}</b> (${pc('great')}%) are doing great, <b>${cats.mid.length}</b> (${pc('mid')}%) are mid, and <b>${cats.low.length}</b> (${pc('low')}%) need urgent support.`)
+    : (state.lang=='ar'
+      ? `التقسيم حسب «${tr(m.label)}»: ${cats.great.length} جيد (${pc('great')}٪)، و${cats.mid.length} متوسط (${pc('mid')}٪)، و${cats.low.length} منخفض (${pc('low')}٪).`
+      : `Split by “${tr(m.label)}”: <b>${cats.great.length}</b> good (${pc('great')}%), <b>${cats.mid.length}</b> mid (${pc('mid')}%), <b>${cats.low.length}</b> low (${pc('low')}%).`);
+  const chips=[['great','Doing great','var(--green)'],['mid','Mid performance','var(--amber)'],['low','Low performance','var(--red)']]
+    .map(c=>`<div class="apchip" style="border-color:${c[2]}"><div class="apnum" style="color:${c[2]}">${cats[c[0]].length}</div><div class="aplbl">${tr(c[1])}</div><div class="appct">${pc(c[0])}%</div></div>`).join('');
+  const pills=arr=>arr.length?arr.map(s=>`<span class="namepill">${avatar(s).replace('avatar','avatar sm')}${s.name}</span>`).join(''):`<span class="flag">—</span>`;
+  const greatPills=arr=>arr.length?arr.map(s=>{const on=state.stars[s.id];
+    return `<span class="namepill ${on?'starred':''}">${avatar(s).replace('avatar','avatar sm')}${s.name}<button class="starbtn ${on?'on':''}" onclick="toggleStar(${s.id})" title="${tr('Give star')}">${on?'★':'☆'}</button></span>`;}).join(''):`<span class="flag">—</span>`;
+  const lowList=cats.low.map(s=>{const w=lowInfo(s,m); const done=state.todoDone[s.id];
+    return `<div class="todo ${done?'done':''}">
+      <input type="checkbox" ${done?'checked':''} onchange="toggleTodo(${s.id})">
+      <div class="todobody">
+        <div class="todohead"><b>${s.name}</b> <span class="flag">· ${facName(s.fac)} · ${w.areas.map(a=>tr(a)).join(' · ')}</span></div>
+        <div class="todoaction">${tr(w.action)}</div>
+        <input class="cmt" placeholder="${tr('Add supervisor comment…')}" value="${(state.comments[s.id]||'').replace(/"/g,'&quot;')}" oninput="setComment(${s.id},this.value)">
+      </div></div>`;}).join('');
+  return rosterCard+`
+   <div class="card full"><h3>📋 ${tr('Daily Action Plan')} — ${scopeText()}</h3>${metricBar}
+     <div class="apbrief">${brief}</div>
+     <div class="apchips">${chips}</div></div>
+   <div class="card full"><h3><span class="dot" style="background:var(--green)"></span> ${tr('Doing great')} · ${cats.great.length}</h3>
+     <div class="desc">${tr('Stretch them: peer-teaching roles, harder missions, and keep recognition visible.')}</div>
+     <div class="pills">${greatPills(cats.great)}</div></div>
+   <div class="card full"><h3><span class="dot" style="background:var(--amber)"></span> ${tr('Mid performance')} · ${cats.mid.length}</h3>
+     <div class="desc">${tr('Close specific gaps: targeted practice on weak concepts plus a weekly check-in.')}</div>
+     <div class="pills">${pills(cats.mid)}</div></div>
+   <div class="card full"><h3><span class="dot" style="background:var(--red)"></span> ${tr('Low performance')} · ${cats.low.length}</h3>
+     <div class="desc">${tr('Intervene now: a 1:1 this week, contact home, and rebuild routines — see per-student actions.')}</div>
+     <div class="todolist">${lowList||`<span class="flag">${tr('None flagged high 🎉')}</span>`}</div></div>`;
+}
+
+/* ============ TODAY'S OVERVIEW (daily, dummy) ============ */
+function isoToday(){return new Date().toISOString().slice(0,10);}
+function curDate(){return state.dayDate||isoToday();}
+function setDayDate(v){state.dayDate=v; render();}
+function sendPraise(name){alert(tr('Praise sent to')+' '+name+' 🎉');}
+
+/* ============ AI ASSIST (local generator; swap for Claude API if a key is available) ============ */
+/* To use the real model: POST to Anthropic /v1/messages with model "claude-opus-4-8",
+   passing the same student facts as a prompt, and render the returned text here. */
+function aiFacts(s){
+  const ar=state.lang=='ar';
+  const tags=weakTags(s).map(t=>tr(t.label)).join(ar?'، ':', ');
+  const acts=weakTags(s).map(t=>tr(t.action));
+  return {ar, name:s.name, score:Math.round(compositeScore(s)*100), tags, acts};
+}
+function aiExplain(id){
+  const s=STUDENTS.find(x=>x.id==id); const f=aiFacts(s);
+  const body = f.ar
+    ? `${f.name} تقييمه الإجمالي ${f.score}%. ${execSummary(s)}\n\nباختصار للمشرف: ركّز معه على ${f.tags}. ابدأ بـ: «${f.acts[0]}»${f.acts[1]?` ثم «${f.acts[1]}»`:''}.`
+    : `${f.name}'s overall score is ${f.score}%. ${execSummary(s)}\n\nIn short: focus on ${f.tags}. Start with: "${f.acts[0]}"${f.acts[1]?`, then "${f.acts[1]}"`:''}.`;
+  openModal('✨ '+(f.ar?'شرح مبسّط':'Quick explanation'), body);
+}
+function aiMessage(id){
+  const s=STUDENTS.find(x=>x.id==id); const f=aiFacts(s);
+  const body = f.ar
+    ? `السلام عليكم،\n\nنود إطلاعكم على متابعة ${f.name} هذا الأسبوع. لاحظنا حاجته لدعم في: ${f.tags}.\n\nنقترح: ${f.acts[0]}\n\nنحن هنا لدعمه، ويسعدنا تواصلكم.\nمع التقدير،\nفريق المتابعة`
+    : `Dear parent,\n\nWe wanted to share an update on ${f.name} this week. We noticed they could use support with: ${f.tags}.\n\nOur suggestion: ${f.acts[0]}\n\nWe're here to help, and welcome your input.\nKind regards,\nThe support team`;
+  openModal('✨ '+(f.ar?'مسودة رسالة لولي الأمر':'Parent message draft'), body);
+}
+function openModal(title,text){state.modal={title,text}; renderModal();}
+function closeModal(){state.modal=null; const m=document.getElementById('modal'); m.style.display='none';}
+function copyModal(){navigator.clipboard&&navigator.clipboard.writeText(state.modal.text); const b=document.getElementById('copybtn'); if(b)b.textContent='✓';}
+function renderModal(){
+  const m=document.getElementById('modal'); if(!state.modal){m.style.display='none';return;}
+  m.innerHTML=`<div class="modal-box">
+    <div class="modal-head"><b>${state.modal.title}</b><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">${state.modal.text.replace(/\n/g,'<br>')}</div>
+    <div class="modal-foot"><span class="flag">${tr('AI-assisted draft — review before sending')}</span>
+      <button class="actbtn" id="copybtn" onclick="copyModal()">📋 ${tr('Copy')}</button></div>
+  </div>`;
+  m.style.display='flex';
+}
+function waLink(s){return 'https://wa.me/?text='+encodeURIComponent((state.lang=='ar'?'مرحبًا، بخصوص الطالب ':'Hello, regarding ')+s.name);}
+function hashStr(str){let h=0;for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))|0;return h;}
+/* small placeholder profile avatar: initial + deterministic colored background */
+const AV_COLORS=['#1ec8a5','#5aa9e6','#f5b945','#f06a6a','#a78bfa','#34d399','#fb7185','#38bdf8','#fbbf24','#4ade80','#e879f9','#22d3ee'];
+function avatar(s){
+  const init=(s.name||'?').trim().charAt(0);
+  const c=AV_COLORS[Math.abs(hashStr(''+s.id))%AV_COLORS.length];
+  return `<span class="avatar" style="background:${c}">${init}</span>`;
+}
+function rng(seed){seed=(seed|0)^0x9e3779b9; seed=Math.imul(seed^(seed>>>16),0x21f0aaad); seed=Math.imul(seed^(seed>>>15),0x735a2d97); seed=seed^(seed>>>15); return ((seed>>>0)%100000)/100000;}
+/* deterministic daily data per student per date (dummy, varies around their own average) */
+function dailyData(s,dk){
+  const b=hashStr(dk+'#'+s.id);
+  // mostly hugs the student's own average; rare TRUE spikes to 100% (good) or 0% (bad) → exceptional days
+  const sp={};
+  const metric=(key,off,center,spread)=>{const r=rng(b+off);
+    if(r>0.98){sp[key]=1;return 1;} if(r<0.02){sp[key]=-1;return 0;}
+    sp[key]=0; return Math.max(0,Math.min(1,(center??0.7)+(rng(b+off+100)-0.5)*2*spread));};
+  return {
+    present: rng(b+1) < Math.min(0.97,(s.att??0.9)+0.04),
+    mission: metric('mission',2,s.mission,0.10),
+    corr: metric('corr',3,s.corr,0.10),
+    temp: metric('temp',4,s.temp,0.10),
+    practice: Math.max(0,Math.round((s.practice/40)*(0.6+rng(b+5)*0.8))),
+    spikes: sp
+  };
+}
+function dailyOverview(data){
+  const dk=curDate(), rows=data.map(s=>({s,d:dailyData(s,dk)}));
+  const absent=rows.filter(r=>!r.d.present), present=rows.filter(r=>r.d.present);
+  const classify=r=>{
+    // delta vs the student's own average across the daily performance factors:
+    // mission, practice volume, correct-practice accuracy, participation. (Attendance is
+    // handled by the absent list; for a present student it's neutral.)
+    const typPr=(r.s.practice/40)||1;
+    const factors=[
+      r.d.mission-(r.s.mission??r.d.mission),                            // mission completion
+      Math.max(-0.5,Math.min(0.5,(r.d.practice/typPr-1)))*0.6,           // practice volume (ratio, capped)
+      r.d.corr-(r.s.corr??r.d.corr),                                     // correct practice
+      r.d.temp-(r.s.temp??r.d.temp)                                      // participation
+    ];
+    const delta=factors.reduce((a,b)=>a+b,0)/factors.length;
+    const badges=[], rb=hashStr(dk+'#'+r.s.id+'#x');
+    const sp=r.d.spikes||{};
+    // positive exceptional (true spikes only)
+    if(sp.mission==1) badges.push({t:'All missions done today',pos:true});
+    if(sp.corr==1) badges.push({t:'Perfect accuracy today',pos:true});
+    if(sp.temp==1) badges.push({t:'Full participation today',pos:true});
+    if(r.s.att!=null&&r.s.att>=1 && rng(rb+1)>0.95) badges.push({t:'Perfect attendance record',pos:true});
+    // negative exceptional (true spikes only)
+    if(sp.mission==-1) badges.push({t:'No missions done today',pos:false});
+    if(sp.corr==-1) badges.push({t:'Very low accuracy today',pos:false});
+    if(sp.temp==-1) badges.push({t:'No participation today',pos:false});
+    const hasNeg=badges.some(x=>!x.pos), hasPos=badges.some(x=>x.pos);
+    let g = hasNeg?'low' : hasPos?'over' : delta>=0.06?'over' : delta<=-0.06?'low' : 'normal';
+    return {delta,badges,g};
+  };
+  present.forEach(r=>Object.assign(r,classify(r)));
+  const low=present.filter(r=>r.g=='low'), over=present.filter(r=>r.g=='over'), normal=present.filter(r=>r.g=='normal');
+  const dpct=v=>Math.round(v*100)+'%';
+  const stat=(lbl,dayV,avgV,count)=>{const up=dayV>=avgV;return `<span class="dstat"><span class="dlbl">${tr(lbl)}</span><b>${count?kfmt(dayV):dpct(dayV)}</b><span style="color:${up?'var(--green)':'var(--red)'}">${up?'▲':'▼'}</span></span>`;};
+  const metricsOf=r=>`<div class="dstats">${stat('Missions',r.d.mission,r.s.mission)}${stat('Accuracy',r.d.corr,r.s.corr)}${stat('Temp',r.d.temp,r.s.temp)}${stat('Practice',r.d.practice,r.s.practice/40,true)}</div>`;
+  const trend=r=>{const ar=state.lang=='ar';const pts=Math.round(Math.abs(r.delta)*100);
+    return r.g=='over'?(ar?`+${pts} نقطة ${tr('above their own average')}`:`+${pts} pts ${tr('above their own average')}`)
+      :r.g=='low'?(ar?`−${pts} نقطة ${tr('below their own average')}`:`−${pts} pts ${tr('below their own average')}`)
+      :tr('around their own average');};
+  // short, direct reason: the strongest factor moving the student today
+  const dayReason=r=>{
+    const ar=state.lang=='ar';
+    const cand=[
+      ['mission', r.d.mission-r.s.mission],
+      ['corr', r.d.corr-r.s.corr],
+      ['temp', r.d.temp-r.s.temp],
+      ['practice', Math.max(-0.5,Math.min(0.5,(r.d.practice/((r.s.practice/40)||1)-1)))]
+    ];
+    const want = r.g=='over';
+    cand.sort((a,b)=> want ? b[1]-a[1] : a[1]-b[1]);
+    const k=cand[0][0];
+    const W={ar:{mission:'إكمال المهام',corr:'دقة التدريب',temp:'المشاركة',practice:'حجم التدريب'},
+             en:{mission:'mission completion',corr:'accuracy',temp:'participation',practice:'practice volume'}};
+    const name=W[ar?'ar':'en'][k];
+    if(want) return ar?`متميّز اليوم بسبب ارتفاع ${name} عن معدّله.`:`Standout today thanks to higher ${name} than usual.`;
+    return ar?`منخفض اليوم بسبب تراجع ${name} عن معدّله.`:`Low today due to a drop in ${name} below their usual.`;
+  };
+  const studentRow=r=>`<div class="drow">
+      <div class="drow-top">${avatar(r.s)}<b>${r.s.name}</b> <span class="flag">· ${facName(r.s.fac)}</span>
+        ${r.badges&&r.badges.length?r.badges.map(bd=>`<span class="badge ${bd.pos?'':'neg'}">${bd.pos?'🏆':'⚠'} ${tr(bd.t)}</span>`).join(''):''}
+        ${r.g=='over'?`<button class="actbtn praise" onclick="sendPraise('${r.s.name.replace(/'/g,'')}')" title="${tr('Send praise')}">👏 ${tr('Send praise')}</button>`:''}
+        <span class="dtrend ${r.g}">${trend(r)}</span></div>
+      ${r.g!=='normal'?`<div class="dayreason ${r.g}">${dayReason(r)}</div>`:''}
+      ${metricsOf(r)}</div>`;
+  const groupCard=(color,title,arr,emptyMsg)=>`<div class="card full"><h3><span class="dot" style="background:${color}"></span> ${tr(title)} · ${arr.length}</h3>
+      ${arr.length?arr.map(studentRow).join(''):`<span class="flag">${emptyMsg}</span>`}</div>`;
+  // date selector
+  const today=isoToday(), yest=new Date(Date.now()-864e5).toISOString().slice(0,10);
+  const bar=`<div class="kpicmp">
+    <button class="${dk==today?'on':''}" onclick="setDayDate('${today}')">${tr('Today')}</button>
+    <button class="${dk==yest?'on':''}" onclick="setDayDate('${yest}')">${tr('Yesterday')}</button>
+    <input type="date" class="dateinput" value="${dk}" max="${today}" onchange="setDayDate(this.value)">
+  </div>`;
+  // absent callout
+  const absentCard=`<div class="card full"><h3>📅 ${tr('Absent today')} · ${absent.length}</h3>
+    <div class="desc">${tr('Follow up on absences and take action.')}</div>
+    ${absent.length?`<div class="abslist">${absent.map(r=>`<div class="absrow">
+        <span class="absname">${avatar(r.s).replace('avatar','avatar sm')}<b>${r.s.name}</b> <span class="flag">· ${facName(r.s.fac)}</span></span>
+        <span class="actbtns">
+          <a class="actbtn wa" href="${waLink(r.s)}" target="_blank" title="${tr('WhatsApp')}">🟢 ${tr('WhatsApp')}</a>
+          <a class="actbtn call" href="tel:+966500000000" title="${tr('Call')}">📞 ${tr('Call')}</a>
+        </span></div>`).join('')}</div>`:`<span class="flag">${tr('All students are present 🎉')}</span>`}</div>`;
+  return `<div class="card full"><h3>🗓️ ${tr("Today's overview")} — ${scopeText()}</h3>
+      <div class="desc">${tr("Daily snapshot of the trackable signals, compared to each student's own average.")}</div>${bar}</div>
+    ${absentCard}
+    ${groupCard('var(--red)','Low performing today',low,tr('All students are present 🎉'))}
+    ${groupCard('var(--green)','Over-achieving today',over,'—')}
+    ${groupCard('var(--mut)','Normal',normal,'—')}`;
+}
+
+/* ---------- helpers ---------- */
+const $ = (h)=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild;}
+const pct = v => v==null?'—':Math.round(v*100)+'%';
+const f2  = v => v==null?'—':(v*100).toFixed(0);
+const mean = a => a.length? a.reduce((s,x)=>s+x,0)/a.length : null;
+const meanOf = (arr,k)=>{const v=arr.map(x=>x[k]).filter(x=>x!=null); return mean(v);}
+const growth = s => (s.eoc!=null&&s.diag!=null)? s.eoc-s.diag : null;
+
+/* color scales */
+function gColor(g){ if(g==null)return 'var(--mut)'; if(g>=0.20)return 'var(--green)'; if(g>=0.10)return 'var(--teal)'; if(g>=0.03)return 'var(--amber)'; return 'var(--red)';}
+function scoreColor(v){ if(v==null)return 'var(--mut)'; if(v>=.8)return 'var(--green)'; if(v>=.6)return 'var(--teal)'; if(v>=.45)return 'var(--amber)'; return 'var(--red)';}
+
+/* ---------- attention model (student level) ---------- */
+// Each student gets flags. Priority = weighted severity. Transparent + explainable.
+function assess(s){
+  const g = growth(s);
+  const flags=[];
+  if(g!=null && g<0)               flags.push({k:'declined', sev:3, txt:'Score dropped since diagnostic'});
+  else if(g!=null && g<0.05)       flags.push({k:'stalled',  sev:2, txt:'Almost no learning gain'});
+  if(s.att!=null && s.att<0.80)    flags.push({k:'attend',   sev:2, txt:'Attendance below 80%'});
+  if(s.corr!=null && s.corr<0.35 && s.exit!=null && s.exit<0.55)
+                                   flags.push({k:'notlearn', sev:2, txt:'Practising but not mastering'});
+  if(s.eoc!=null && s.eoc<0.55)    flags.push({k:'eoc',      sev:2, txt:'Low end-of-course mastery'});
+  if(s.mission!=null && s.mission<0.6) flags.push({k:'mission', sev:1, txt:'Missions incomplete'});
+  if(s.trust!=null && s.trust<0.5) flags.push({k:'trust',    sev:2, txt:'Low trust in the experience'});
+  if(s.temp!=null && s.temp<0.5)   flags.push({k:'temp',     sev:1, txt:'Low classroom engagement'});
+  if(s.practice!=null && s.practice<800) flags.push({k:'practice', sev:1, txt:'Very little practice volume'});
+  // working hard but inefficient
+  if(s.mission!=null&&s.mission>=0.85 && s.corr!=null&&s.corr<0.35 && (g==null||g<0.1))
+                                   flags.push({k:'grind',    sev:2, txt:'Working hard, low return'});
+  const score = flags.reduce((a,b)=>a+b.sev,0);
+  let tier='ok';
+  if(score>=4) tier='high'; else if(score>=2) tier='med'; else if(score>=1) tier='low';
+  return {g,flags,score,tier};
+}
+const TIER = {high:{t:'High',c:'p-red'},med:{t:'Medium',c:'p-amber'},low:{t:'Watch',c:'p-blue'},ok:{t:'On track',c:'p-green'}};
+
+/* recommended next action from dominant flag */
+function action(s,a){
+  if(!a.flags.length) return 'Keep the momentum — recognise his progress in front of everyone.';
+  const top=[...a.flags].sort((x,y)=>y.sev-x.sev)[0].k;
+  const map={
+    declined:'Sit with him to understand the drop and reconnect him with the teacher for a plan this week.',
+    stalled:'Track his progress closely and encourage him to ask the teacher for a review plan.',
+    attend:'Reach out to the student/home about absences and re-engage him.',
+    notlearn:'Encourage him to review his mistakes with the teacher and ask about the right approach.',
+    grind:'His effort is high — connect him with the teacher to adjust technique; encourage asking over repeating.',
+    mission:'Ask why missions stall (time, difficulty, or motivation) and remove the blocker.',
+    trust:'Check in on how he feels about class and relay his feedback to the teacher.',
+    temp:'Involve him more in class, give him a role, and encourage him to participate and ask.',
+    eoc:'Connect him with the teacher to review the hard concepts; encourage him to ask more in class.',
+    practice:'Encourage a simple daily practice habit and follow up.'
+  };
+  return map[top]||'Review the case with the student.';
+}
+
+/* composite performance score — blends ALL metrics (0–1) */
+const clamp01=x=>Math.max(0,Math.min(1,x));
+function compositeScore(s){
+  const g=clamp01(((s.eoc??0)-(s.diag??0))/0.4);          // learning gain
+  const pn=clamp01((s.practice||0)/5000);                  // practice volume
+  const parts=[s.eoc,s.att,s.mission,s.trust,s.corr,s.exit,s.temp,s.diag,g,pn].filter(v=>v!=null);
+  return parts.reduce((a,b)=>a+b,0)/parts.length;
+}
+
+/* ---------- aggregation ---------- */
+function agg(arr){
+  const as = arr.map(assess);
+  return {
+    n:arr.length,
+    score:mean(arr.map(compositeScore)),
+    growth:mean(arr.map(growth).filter(x=>x!=null)),
+    eoc:meanOf(arr,'eoc'), diag:meanOf(arr,'diag'),
+    att:meanOf(arr,'att'), mission:meanOf(arr,'mission'),
+    corr:meanOf(arr,'corr'), exit:meanOf(arr,'exit'),
+    trust:meanOf(arr,'trust'), temp:meanOf(arr,'temp'),
+    practice:meanOf(arr,'practice'),
+    high:as.filter(a=>a.tier=='high').length,
+    med:as.filter(a=>a.tier=='med').length,
+    ok:as.filter(a=>a.tier=='ok').length,
+    atRisk:as.filter(a=>a.tier=='high'||a.tier=='med').length
+  };
+}
+const groupBy=(arr,k)=>arr.reduce((m,x)=>((m[x[k]]=m[x[k]]||[]).push(x),m),{});
+
+/* ============ FACILITATOR PERFORMANCE CHARTS ============ */
+/* benchmark = the REST of the students (excluding this class), within the chosen scope */
+function benchSet(){
+  let b = state.cmpScope=='all' ? STUDENTS : STUDENTS.filter(s=>s.school===state.ctxSchool);
+  return b.filter(s=>s.fac!=state.ctxFac);
+}
+const NETMEAN=k=>meanOf(benchSet(),k);
+function setCmpScope(v){state.cmpScope=v; render();}
+const svgW=(inner,h=158)=>`<svg viewBox="0 0 320 ${h}" width="100%" style="display:block">${inner}</svg>`;
+const kfmt=v=>v>=1000?(v/1000).toFixed(1).replace('.0','')+'k':Math.round(v);
+
+/* histogram with you-vs-network reference lines; red bars flag the concerning tail */
+function histChart(vals,o){
+  vals=vals.filter(v=>v!=null);
+  const {min,max,bins,fmt,cm,nm,thresh,pctTicks}=o;
+  const cnt=Array(bins).fill(0);
+  vals.forEach(v=>{let b=Math.floor((v-min)/(max-min)*bins); b=Math.max(0,Math.min(bins-1,b)); cnt[b]++;});
+  const mx=Math.max(...cnt,1);
+  const x0=34,x1=308,y0=18,yb=120, bw=(x1-x0)/bins;
+  const xof=v=>x0+(v-min)/(max-min)*(x1-x0);
+  let bars='';
+  for(let i=0;i<bins;i++){
+    const h=(cnt[i]/mx)*(yb-y0), x=x0+i*bw;
+    const upper=min+(i+1)/bins*(max-min);
+    const bad = thresh!=null && upper<=thresh+1e-9;
+    bars+=`<rect x="${x+1.5}" y="${yb-h}" width="${bw-3}" height="${h}" rx="2" fill="${bad?'var(--red)':'var(--teal-d)'}" opacity="0.9"/>`;
+    if(cnt[i]>0) bars+=`<text x="${x+bw/2}" y="${yb-h-3}" font-size="8" fill="var(--mut)" text-anchor="middle">${cnt[i]}</text>`;
+  }
+  let axis=`<line x1="${x0}" y1="${yb}" x2="${x1}" y2="${yb}" stroke="var(--line)"/>`;
+  const ticks = pctTicks?[0,.25,.5,.75,1]:[0,.5,1];
+  ticks.forEach(t=>{const v=min+t*(max-min); axis+=`<text x="${xof(v)}" y="${yb+13}" font-size="8" fill="var(--mut)" text-anchor="middle">${fmt(v)}</text>`;});
+  const vline=(v,col)=> v==null?'':`<line x1="${xof(v)}" y1="${y0-6}" x2="${xof(v)}" y2="${yb}" stroke="${col}" stroke-width="2" stroke-dasharray="3 2"/><circle cx="${xof(v)}" cy="${y0-6}" r="2.5" fill="${col}"/>`;
+  return svgW(bars+axis+vline(nm,'var(--amber)')+vline(cm,'var(--teal)'),140);
+}
+
+/* donut for Qudrat level mix — ring on top, legend below (RTL-safe) */
+function donutChart(data){
+  const g=groupBy(data,'level'), keys=Object.keys(g).sort();
+  const tot=data.length||1, cols={L1:'var(--teal)',L2:'var(--blue)',L3:'var(--amber)'};
+  const cx=70,cy=70,r=50,C=2*Math.PI*r; let off=0,arcs='';
+  keys.forEach(k=>{const frac=g[k].length/tot; arcs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cols[k]||'var(--mut)'}" stroke-width="20" stroke-dasharray="${frac*C} ${C}" stroke-dashoffset="${-off*C}" transform="rotate(-90 ${cx} ${cy})"/>`; off+=frac;});
+  arcs+=`<text x="${cx}" y="${cy-2}" font-size="20" font-weight="800" fill="var(--txt)" text-anchor="middle">${tot}</text><text x="${cx}" y="${cy+16}" font-size="10" fill="var(--mut)" text-anchor="middle">${tr('students')}</text>`;
+  const svg=`<svg viewBox="0 0 140 140" width="130" height="130" style="display:block;margin:0 auto">${arcs}</svg>`;
+  const legend=`<div class="pielegend">${keys.map(k=>`<div class="pieleg"><span class="dot" style="background:${cols[k]||'var(--mut)'}"></span>${tr('Qudrat')} ${k.replace('L',tr('Level')+' ')} — <b>${g[k].length}</b> (${Math.round(g[k].length/tot*100)}%)</div>`).join('')}</div>`;
+  return `<div class="pie-wrap">${svg}${legend}</div>`;
+}
+
+/* semicircle gauge for classroom temp */
+function gaugeChart(cm,nm){
+  const cx=160,cy=120,r=78;
+  const pt=(a)=>[cx+r*Math.cos(Math.PI*(1-a)),cy-r*Math.sin(Math.PI*(1-a))];
+  const arc=(a0,a1,col,w)=>{const[s0x,s0y]=pt(a0),[e1x,e1y]=pt(a1);return `<path d="M ${s0x} ${s0y} A ${r} ${r} 0 ${a1-a0>0.5?1:0} 1 ${e1x} ${e1y}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`;};
+  const valCol = cm>=.7?'var(--green)':cm>=.5?'var(--amber)':'var(--red)';
+  const[nx,ny]=pt(nm),[nx2,ny2]=[cx+(r+12)*Math.cos(Math.PI*(1-nm)),cy-(r+12)*Math.sin(Math.PI*(1-nm))];
+  return svgW(
+    arc(0,1,'var(--line)',16)+arc(0,cm,valCol,16)+
+    `<line x1="${nx}" y1="${ny}" x2="${nx2}" y2="${ny2}" stroke="var(--amber)" stroke-width="2.5"/>`+
+    `<text x="${cx}" y="${cy-14}" font-size="26" font-weight="800" fill="${valCol}" text-anchor="middle">${Math.round(cm*100)}%</text>`+
+    `<text x="${cx}" y="${cy+6}" font-size="9" fill="var(--mut)" text-anchor="middle">${tr('your class temperature')}</text>`+
+    `<text x="${cx-r}" y="${cy+15}" font-size="8" fill="var(--mut)" text-anchor="middle">0%</text><text x="${cx+r}" y="${cy+15}" font-size="8" fill="var(--mut)" text-anchor="middle">100%</text>`,140);
+}
+
+/* slope chart: class vs network Diagnostic -> EOC (value-add) */
+function slopeChart(data){
+  const cd=meanOf(data,'diag'),ce=meanOf(data,'eoc'),nd=NETMEAN('diag'),ne=NETMEAN('eoc');
+  const x0=88,x1=232,y0=22,yb=118, yof=v=>yb-v*(yb-y0);
+  const lineFor=(d,e,col,w)=>`<line x1="${x0}" y1="${yof(d)}" x2="${x1}" y2="${yof(e)}" stroke="${col}" stroke-width="${w}"/><circle cx="${x0}" cy="${yof(d)}" r="4" fill="${col}"/><circle cx="${x1}" cy="${yof(e)}" r="4" fill="${col}"/>`;
+  return svgW(
+    `<text x="${x0}" y="${yb+14}" font-size="9" fill="var(--mut)" text-anchor="middle">${tr('Diagnostic')}</text>`+
+    `<text x="${x1}" y="${yb+14}" font-size="9" fill="var(--mut)" text-anchor="middle">${tr('EOC')}</text>`+
+    lineFor(nd,ne,'var(--amber)',2)+lineFor(cd,ce,'var(--teal)',3)+
+    `<text x="${x0-6}" y="${yof(cd)+3}" font-size="9" fill="var(--teal)" text-anchor="end" font-weight="700">${f2(cd)}</text>`+
+    `<text x="${x1+6}" y="${yof(ce)+3}" font-size="9" fill="var(--teal)" font-weight="700">${f2(ce)}</text>`+
+    `<text x="${x1+6}" y="${yof(ne)+3}" font-size="8.5" fill="var(--amber)">${f2(ne)}</text>`,140);
+}
+
+/* per-metric config */
+const METRICS=[
+  {k:'growth',label:'Diagnostic → EOC (your value-add)',type:'slope',
+   advice:'This is the metric Noon judges you on: how far you moved students from where they started.'},
+  {k:'level',label:'Qudrat Level mix',type:'donut',
+   advice:'The blend of learning journeys you manage — context for every other chart.'},
+  {k:'diag',label:'Diagnostic result',type:'histpct',
+   advice:'Starting point, not your score. Lower start = bigger growth opportunity.'},
+  {k:'eoc',label:'EOC Overall result',type:'histpct',thresh:.6,
+   advice:'Final mastery. Focus the red tail before the next EOC.'},
+  {k:'att',label:'Attendance %',type:'histpct',thresh:.8,
+   advice:'Students under 80% rarely recover — call home first.'},
+  {k:'mission',label:'Mission Completion %',type:'histpct',thresh:.6,
+   advice:'Low completion = a blocker. Ask: difficulty, time, or motivation?'},
+  {k:'trust',label:'Trust %',type:'histpct',thresh:.5,
+   advice:'Trust dips come before disengagement — check in this week.'},
+  {k:'practice',label:'Practice attempts #',type:'histcount',thresh:1000,
+   advice:'Low volume = no practice routine. Very high volume + low accuracy = grinding.'},
+  {k:'corr',label:'Correct Practice %',type:'histpct',thresh:.35,
+   advice:'Low accuracy with high volume = wrong technique, not low effort.'},
+  {k:'exit',label:'Exit Ticket Correctness %',type:'histpct',thresh:.55,
+   advice:'Session-level mastery. Flag the concepts where the class dips so the teacher can revisit them.'},
+  {k:'temp',label:'Classroom Temp %',type:'gauge',thresh:.5,
+   advice:'Energy in the room. Low temp → change seating, pace, or format.'}
+];
+
+/* simple two-bar comparison: your class vs the rest */
+function compareBars(cm,nm,fmt,max,below){
+  const w=v=>Math.max(2,Math.round((v/max)*100))+'%';
+  const youCol=below?'var(--red)':'var(--teal)';
+  return `<div class="cmp">
+    <div class="cmprow"><span class="cmplab">${tr('Your class')}</span><div class="cmptrack"><i style="width:${w(cm)};background:${youCol}"></i></div><b class="cmpval" style="color:${youCol}">${fmt(cm)}</b></div>
+    <div class="cmprow"><span class="cmplab">${tr('The rest')}</span><div class="cmptrack"><i style="width:${w(nm)};background:var(--amber)"></i></div><b class="cmpval" style="color:var(--amber)">${fmt(nm)}</b></div>
+  </div>`;
+}
+const METRIC_IC={growth:'📈',level:'🧭',diag:'🩺',eoc:'🏁',att:'📅',mission:'✅',trust:'🤝',practice:'🔁',corr:'🎯',exit:'🎫',temp:'🙋'};
+function metricCard(m,data){
+  const ic=METRIC_IC[m.k]||'📊';
+  // Qudrat → pie ; Growth → line ; everything else → simple comparison bars
+  if(m.type=='donut') return `<div class="mcard"><h4>${ic} ${tr(m.label)}</h4><div class="mdesc">${tr(m.advice)}</div>${donutChart(data)}</div>`;
+  let cm,nm,fmt,max,below=false,body,verdict='';
+  if(m.type=='slope'){
+    cm=meanOf(data,'eoc')-meanOf(data,'diag'); nm=NETMEAN('eoc')-NETMEAN('diag');
+    body=slopeChart(data);
+    fmt=v=>'+'+f2(v)+' '+tr('pts');
+  } else {
+    const isCount=m.type=='histcount';
+    cm=meanOf(data,m.k); nm=NETMEAN(m.k);
+    fmt=isCount?kfmt:pct; max=isCount?Math.max(...STUDENTS.map(s=>s.practice)):1;
+    below=m.thresh!=null && cm<m.thresh;
+    body=compareBars(cm,nm,fmt,max,below);
+  }
+  if(cm!=null&&nm!=null){const up=cm>=nm;
+    verdict=`<span class="vbadge ${up?'up':'down'}">${up?tr('▲ above the rest'):tr('▼ below the rest')}</span>`;}
+  return `<div class="mcard"><div class="mhead"><h4>${ic} ${tr(m.label)}</h4>${verdict}</div>
+    <div class="mdesc">${tr(m.advice)}</div>${body}</div>`;
+}
+
+function toggleAllMetrics(){state.showAllMetrics=!state.showAllMetrics; render();}
+function metricsSection(data){
+  const scopeToggle=`<div class="cmpscope"><span class="flag">${tr('Compare with:')}</span>
+    <button class="${state.cmpScope=='school'?'on':''}" onclick="setCmpScope('school')">${tr('Same school')}</button>
+    <button class="${state.cmpScope=='all'?'on':''}" onclick="setCmpScope('all')">${tr('All schools')}</button></div>`;
+  // facilitator default: the 4 most actionable signals; rest behind a toggle
+  const KEY=['growth','eoc','att','corr'];
+  const shown = state.showAllMetrics ? METRICS : METRICS.filter(m=>KEY.includes(m.k));
+  const moreBtn=`<button class="actbtn" style="margin-top:12px" onclick="toggleAllMetrics()">${state.showAllMetrics?('▲ '+tr('Show key metrics only')):('▼ '+tr('Show all metrics'))}</button>`;
+  return `<div class="sectitle">${tr('📊 Class performance — where you stand & what to do')}</div>
+    <div class="secsub">${tr('Each chart compares your class (teal) to the rest of the students (amber). Red marks the students/range needing action.')}</div>
+    ${scopeToggle}
+    <div class="mgrid">${shown.map(m=>metricCard(m,data)).join('')}</div>
+    ${moreBtn}`;
+}
+
+
+/* ---------- state ---------- */
+let state={role:'mgmt', lang:'ar', tab:'dashboard', sbOpen:true, apMetric:'overall', cmpScope:'school', kpiCmp:'school', needComment:null, openNote:null, dayDate:null, modal:null, showAllMetrics:false, stars:{}, todoDone:{}, comments:{}, outcomes:{}, ctxSchool:'School A', ctxFac:null,
+  fSchool:[], fFac:[], fStudent:[], openMS:null, msSearch:'',
+  sort:{key:'score',dir:-1}};
+/* persist durable choices + supervisor inputs across sessions */
+const PERSIST=['lang','role','tab','ctxSchool','ctxFac','dayDate','cmpScope','kpiCmp','stars','todoDone','comments','outcomes'];
+function saveState(){try{const o={};PERSIST.forEach(k=>o[k]=state[k]);localStorage.setItem('noonDash',JSON.stringify(o));}catch(e){}}
+(function loadState(){try{const o=JSON.parse(localStorage.getItem('noonDash')||'{}');PERSIST.forEach(k=>{if(o[k]!=null)state[k]=o[k];});}catch(e){}})();
+function uniq(arr,k){return [...new Set(arr.map(x=>x[k]))];}
+function firstClass(school){const s=STUDENTS.find(x=>x.school===school);return s?s.fac:null;}
+
+/* ---------- KPI comparison baselines (facilitator) ---------- */
+/* comparison options per role */
+function kpiCmpOptions(){
+  if(state.role=='fac') return [['peers','Other classes (same school)'],['all','All classes'],['lastweek','Same class · last week'],['semester','Same class · start of semester']];
+  if(state.role=='leader') return [['all','All schools'],['lastweek','Same school · last week'],['semester','Same school · start of semester']];
+  return [['lastweek','Last week'],['semester','Start of semester']]; // management (whole network)
+}
+function kpiBaseline(){
+  if(state.kpiCmp=='lastweek'||state.kpiCmp=='semester'){
+    const a=agg(scoped()), f=state.kpiCmp=='lastweek'?0.95:0.83, b={n:a.n,high:a.high,med:a.med,atRisk:a.atRisk};
+    ['score','growth','eoc','diag','att','mission','trust','practice','corr','exit','temp'].forEach(k=>{
+      b[k]= a[k]==null?null : (k=='practice'||k=='growth' ? a[k]*f : Math.max(0,Math.min(1,a[k]*f)));});
+    return b;
+  }
+  if(state.kpiCmp=='all') return agg(state.role=='fac'?STUDENTS.filter(s=>s.fac!=state.ctxFac):STUDENTS);
+  // peers
+  if(state.role=='fac') return agg(STUDENTS.filter(s=>s.school===state.ctxSchool && s.fac!=state.ctxFac));
+  if(state.role=='leader') return agg(STUDENTS.filter(s=>s.school!==state.ctxSchool));
+  return agg(STUDENTS);
+}
+function setKpiCmp(v){state.kpiCmp=v; render();}
+function kpiCmpBar(){
+  const opts=kpiCmpOptions();
+  if(!opts.some(o=>o[0]==state.kpiCmp)) state.kpiCmp=opts[0][0];
+  return `<div class="kpicmp"><span class="flag">${tr('Compare with:')}</span>${opts.map(o=>`<button class="${state.kpiCmp==o[0]?'on':''}" onclick="setKpiCmp('${o[0]}')">${tr(o[1])}</button>`).join('')}</div>`;
+}
+
+/* ---------- render bits ---------- */
+function kpiRow(a, base){
+  const cards=[
+    {l:tr('Students'),v:a.n},
+    {l:tr('Overall score'),v:pct(a.score),note:tr('all 10 metrics'),k:'score',t:'pct'},
+    {l:tr('Avg learning gain'),v:(a.growth>=0?'+':'')+f2(a.growth)+' '+tr('pts'),note:tr('EOC − Diagnostic'),k:'growth',t:'gain'},
+    {l:tr('Avg diagnostic'),v:pct(a.diag),note:tr('baseline'),k:'diag',t:'pct'},
+    {l:tr('Avg EOC mastery'),v:pct(a.eoc),note:tr('end-of-course'),k:'eoc',t:'pct'},
+    {l:tr('Avg attendance'),v:pct(a.att),k:'att',t:'pct'},
+    {l:tr('Avg mission completion'),v:pct(a.mission),k:'mission',t:'pct'},
+    {l:tr('Avg trust'),v:pct(a.trust),k:'trust',t:'pct'},
+    {l:tr('Avg practice attempts'),v:kfmt(a.practice),k:'practice',t:'count'},
+    {l:tr('Avg correct practice'),v:pct(a.corr),k:'corr',t:'pct'},
+    {l:tr('Avg exit ticket'),v:pct(a.exit),k:'exit',t:'pct'},
+    {l:tr('Avg classroom temp'),v:pct(a.temp),k:'temp',t:'pct'},
+    {l:tr('Need attention'),v:a.atRisk,note:a.high+' '+tr('high')+' · '+a.med+' '+tr('medium')}
+  ];
+  const delta=(c)=>{
+    if(!base||!c.k||base[c.k]==null||a[c.k]==null) return '';
+    const d=a[c.k]-base[c.k], up=d>=0, ar=up?'▲':'▼';
+    let val = c.t=='count'? kfmt(Math.abs(d)) : c.t=='gain'? f2(Math.abs(d))+' '+tr('pts') : Math.round(Math.abs(d)*100)+'%';
+    return `<div class="kpidelta" style="color:${up?'var(--green)':'var(--red)'}">${ar} ${val}</div>`;
+  };
+  return `<div class="kpis">${cards.map(c=>`
+    <div class="kpi"><div class="lbl">${c.l}</div><div class="val">${c.v}</div>${c.note?`<div class="note">${c.note}</div>`:''}${delta(c)}</div>`).join('')}</div>`;
+}
+function barCell(v,color){
+  return `<div class="num">${pct(v)}</div><div class="bar"><i style="width:${Math.round((v||0)*100)}%;background:${color||scoreColor(v)}"></i></div>`;
+}
+
+/* ---------- LEVEL TABLE (schools or classes) ---------- */
+function levelTable(groups, labelKey, title, desc, drillRole){
+  const rows = Object.entries(groups).map(([key,arr])=>({key,a:agg(arr),arr}));
+  const sk=state.sort.key, dir=state.sort.dir;
+  rows.sort((x,y)=>{
+    let xv = sk=='key'? x.key : x.a[sk], yv = sk=='key'? y.key : y.a[sk];
+    if(xv==null)xv=-1; if(yv==null)yv=-1;
+    return (xv>yv?1:xv<yv?-1:0)*dir;
+  });
+  const head=(k,t,r)=>`<th onclick="sortBy('${k}')" ${r?'class="num"':''}>${t}${sk==k?(dir>0?' ▲':' ▼'):''}</th>`;
+  const medal=i=>['🥇','🥈','🥉'][i]||'';
+  const mcell=(v,fmt)=>`<td class="num" style="color:${scoreColor(v)}">${fmt?fmt(v):pct(v)}</td>`;
+  const body = rows.map((r,i)=>{
+    const a=r.a, rankBad=a.atRisk/a.n;
+    const lv=groupBy(r.arr,'level');
+    const qmix=Object.keys(lv).sort().map(k=>k+':'+lv[k].length).join(' ');
+    return `<tr onclick="drill('${labelKey}','${r.key}')">
+      <td class="num"><span class="rankcell">${medal(i)||'#'+(i+1)}</span></td>
+      <td><b>${labelKey=='school'?r.key:facName(r.key)}</b><div class="flag">${labelKey=='school'?(new Set(r.arr.map(s=>s.fac)).size+' '+tr('facilitators')):(r.arr[0].school)}</div></td>
+      <td class="num">${a.n}</td>
+      <td>${barCell(a.score, scoreColor(a.score))}<div class="flag" style="text-align:center">${pct(a.score)}</div></td>
+      <td class="num" style="color:${gColor(a.growth)}">${(a.growth>=0?'+':'')+f2(a.growth)}</td>
+      <td class="num flag">${qmix}</td>
+      ${mcell(a.diag)}${mcell(a.eoc)}${mcell(a.att)}${mcell(a.mission)}${mcell(a.trust)}
+      ${mcell(a.practice,kfmt)}${mcell(a.corr)}${mcell(a.exit)}${mcell(a.temp)}
+      <td class="num"><span class="pill ${rankBad>=.4?'p-red':rankBad>=.25?'p-amber':'p-green'}">${a.atRisk} (${Math.round(rankBad*100)}%)</span></td>
+    </tr>`;
+  }).join('');
+  return `<div class="card full">
+    <h3>${tr(title)}</h3><div class="desc">${tr(desc)}</div>
+    <div class="tscroll"><table><thead><tr>
+      <th class="num">${tr('Rank')}</th>
+      ${head('key',labelKey=='school'?tr('School'):tr('Facilitator'))}
+      ${head('n',tr('Students'),1)}
+      ${head('score',tr('Overall score'),1)}
+      ${head('growth',tr('Gain'),1)}
+      <th class="num">${tr('Qudrat')}</th>
+      ${head('diag',tr('Diag'),1)}
+      ${head('eoc',tr('EOC'),1)}
+      ${head('att',tr('Att'),1)}
+      ${head('mission',tr('Missions'),1)}
+      ${head('trust',tr('Trust'),1)}
+      ${head('practice',tr('Practice'),1)}
+      ${head('corr',tr('Accuracy'),1)}
+      ${head('exit',tr('Exit'),1)}
+      ${head('temp',tr('Temp'),1)}
+      ${head('atRisk',tr('Need attention'),1)}
+    </tr></thead><tbody>${body}</tbody></table></div>
+    <div class="hint">${tr('Ranked by the Overall score — a composite of all 10 metrics. Click any column to re-sort, or any row to drill in.')}</div>
+  </div>`;
+}
+
+/* ---------- STUDENT TABLE ---------- */
+function studentTable(arr){
+  const rows = arr.map(s=>({s,a:assess(s)}));
+  const order={high:0,med:1,low:2,ok:3};
+  const sk=state.sort.key,dir=state.sort.dir;
+  rows.sort((x,y)=>{
+    if(sk=='score'){return ((compositeScore(x.s)>compositeScore(y.s)?1:-1))*dir;}
+    if(sk=='growth'){return (((x.a.g??-1)>(y.a.g??-1)?1:-1))*dir;}
+    if(['diag','eoc','att','mission','trust','practice','corr','exit','temp'].includes(sk)){
+      return (((x.s[sk]??-1)>(y.s[sk]??-1)?1:-1))*dir;
+    }
+    return (order[x.a.tier]-order[y.a.tier]) || (y.a.score-x.a.score);
+  });
+  const mcell=(v,fmt)=>`<td class="num" style="color:${scoreColor(v)}">${fmt?fmt(v):pct(v)}</td>`;
+  const body=rows.map(({s,a})=>{
+    const T=TIER[a.tier], ov=compositeScore(s);
+    return `<tr>
+      <td><div style="display:flex;align-items:center">${avatar(s)}<div><b>${s.name}</b><div class="flag">#${s.id} · ${s.level} · ${facName(s.fac)}</div></div></div></td>
+      <td>${barCell(ov, scoreColor(ov))}<div class="flag" style="text-align:center">${pct(ov)}</div></td>
+      <td><span class="pill ${T.c}">${tr(T.t)}</span></td>
+      <td class="num" style="color:${gColor(a.g)}"><b>${a.g==null?'—':(a.g>=0?'+':'')+f2(a.g)}</b></td>
+      ${mcell(s.diag)}${mcell(s.eoc)}${mcell(s.att)}${mcell(s.mission)}${mcell(s.trust)}
+      ${mcell(s.practice,kfmt)}${mcell(s.corr)}${mcell(s.exit)}${mcell(s.temp)}
+      <td class="twrap flag">${a.flags.slice(0,2).map(f=>tr(f.txt)).join(' · ')||'—'}</td>
+      <td class="twrap" style="font-size:12.5px;color:var(--txt)">${tr(action(s,a))}</td>
+    </tr>`;
+  }).join('');
+  const head=(k,t,r)=>`<th onclick="sortBy('${k}')" ${r?'class="num"':''}>${t}${state.sort.key==k?(dir>0?' ▲':' ▼'):''}</th>`;
+  return `<div class="card full">
+    <h3>${tr('Student action list')}</h3>
+    <div class="desc">${tr('Each student is scored on all 10 metrics (Overall), with priority, why, and the next action.')}</div>
+    <div class="tscroll"><table><thead><tr>
+      <th>${tr('Student')}</th>
+      ${head('score',tr('Overall score'),1)}
+      <th>${tr('Priority')}</th>
+      ${head('growth',tr('Gain'),1)}
+      ${head('diag',tr('Diag'),1)}${head('eoc',tr('EOC'),1)}${head('att',tr('Att'),1)}${head('mission',tr('Missions'),1)}${head('trust',tr('Trust'),1)}
+      ${head('practice',tr('Practice'),1)}${head('corr',tr('Accuracy'),1)}${head('exit',tr('Exit'),1)}${head('temp',tr('Temp'),1)}
+      <th>${tr('Why')}</th><th>${tr('Recommended next action')}</th>
+    </tr></thead><tbody>${body}</tbody></table></div>
+  </div>`;
+}
+
+/* ---------- distribution / mix card ---------- */
+function mixCard(arr,label){
+  const a=agg(arr);
+  const seg=[['On track',a.ok,'var(--green)'],['Watch/Medium',a.med,'var(--amber)'],['High priority',a.high,'var(--red)']];
+  const tot=a.n||1;
+  return `<div class="card">
+    <h3>${tr('Attention mix')} · ${label}</h3>
+    <div class="desc">${tr('How the cohort splits by priority today.')}</div>
+    <div class="stack">${seg.map(s=>`<i title="${tr(s[0])}: ${s[1]}" style="width:${s[1]/tot*100}%;background:${s[2]}"></i>`).join('')}</div>
+    <div class="legend">${seg.map(s=>`<span><span class="dot" style="background:${s[2]}"></span>${tr(s[0])} — <b>${s[1]}</b></span>`).join('')}</div>
+    <div style="margin-top:16px">
+      ${[['Overall score',a.score],['Diagnostic result',a.diag],['EOC Overall result',a.eoc],['Attendance',a.att],['Mission completion',a.mission],['Trust',a.trust],['Practice accuracy',a.corr],['Exit-ticket mastery',a.exit],['Classroom temp',a.temp]]
+        .map(m=>`<div style="margin:7px 0"><div style="display:flex;justify-content:space-between"><span class="flag">${tr(m[0])}</span><span class="flag">${pct(m[1])}</span></div>
+        <div class="bar"><i style="width:${(m[1]||0)*100}%;background:${scoreColor(m[1])}"></i></div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ---------- top watchlist card (cross-cohort) ---------- */
+function watchlist(arr,label){
+  const rows=arr.map(s=>({s,a:assess(s)})).filter(r=>r.a.tier=='high')
+    .sort((x,y)=>y.a.score-x.a.score).slice(0,8);
+  return `<div class="card">
+    <h3>${tr('Top priority students')} · ${label}</h3>
+    <div class="desc">${state.lang=='ar'?`تم إبراز ${rows.length} من أكثر الطلاب احتياجًا للاهتمام الفوري.`:`The ${rows.length} highest-need students surfaced for immediate attention.`}</div>
+    <table><tbody>${rows.map(({s,a})=>`<tr>
+      <td><div style="display:flex;align-items:center">${avatar(s)}<div><b>${s.name}</b><div class="flag">${s.school} · ${facName(s.fac)}</div></div></div></td>
+      <td class="flag">${a.flags[0]?tr(a.flags[0].txt):''}</td>
+      <td class="num" style="color:${gColor(a.g)}"><b>${a.g==null?'—':(a.g>=0?'+':'')+f2(a.g)}</b></td>
+    </tr>`).join('')||`<tr><td class="flag">${tr('None flagged high 🎉')}</td></tr>`}</tbody></table>
+  </div>`;
+}
+
+/* ---------- main render ---------- */
+/* ---------- scoping & filters ---------- */
+function scoped(){
+  let d=STUDENTS;
+  if(state.role!='mgmt') d=d.filter(s=>s.school===state.ctxSchool);
+  if(state.role=='fac'&&state.ctxFac!=null) d=d.filter(s=>s.fac==state.ctxFac);
+  if(state.fSchool.length) d=d.filter(s=>state.fSchool.includes(s.school));
+  if(state.fFac.length) d=d.filter(s=>state.fFac.includes(s.fac));
+  if(state.fStudent.length) d=d.filter(s=>state.fStudent.includes(s.id));
+  return d;
+}
+function activeLevel(){
+  if(state.role=='fac') return 'student';
+  if(state.fStudent.length||state.fFac.length) return 'student';
+  if(state.role=='leader') return 'class';
+  if(state.fSchool.length) return 'class';
+  return 'school';
+}
+function scopeText(){
+  const lvl=activeLevel();
+  if(state.role=='fac') return `${state.ctxSchool} · ${facName(state.ctxFac)} — ${tr('your students')}`;
+  if(state.role=='leader'){
+    if(lvl=='class') return `${state.ctxSchool} · ${tr('all classes')}`;
+    return `${state.ctxSchool} · ${state.fStudent.length?state.fStudent.length+' '+tr('students selected'):tr('selected classes')}`;
+  }
+  if(lvl=='school') return tr('Network overview · all 5 schools');
+  if(lvl=='class') return tr('Classes in')+' '+(state.fSchool.join(', ')||'…');
+  return tr('Students')+(state.fFac.length?' · '+tr('selected classes'):'')+(state.fStudent.length?` · ${state.fStudent.length} ${tr('selected')}`:'');
+}
+function optionsFor(field){
+  if(field=='fSchool') return uniq(STUDENTS,'school').sort().map(v=>({v,lbl:v}));
+  if(field=='fFac'){
+    let b=STUDENTS;
+    if(state.role!='mgmt') b=b.filter(s=>s.school===state.ctxSchool);
+    if(state.fSchool.length) b=b.filter(s=>state.fSchool.includes(s.school));
+    return uniq(b,'fac').sort((a,b)=>a-b).map(v=>{
+      const sc=STUDENTS.find(s=>s.fac==v).school;
+      return {v,lbl:facName(v)+(state.role=='mgmt'?` · ${sc}`:'')};
+    });
+  }
+  let b=STUDENTS;
+  if(state.role!='mgmt') b=b.filter(s=>s.school===state.ctxSchool);
+  if(state.role=='fac'&&state.ctxFac!=null) b=b.filter(s=>s.fac==state.ctxFac);
+  if(state.fSchool.length) b=b.filter(s=>state.fSchool.includes(s.school));
+  if(state.fFac.length) b=b.filter(s=>state.fFac.includes(s.fac));
+  return b.slice().sort((x,y)=>x.id-y.id).map(s=>({v:s.id,lbl:`${s.name} · ${facName(s.fac)}`}));
+}
+function rowsHTML(field,search){
+  const sel=state[field];
+  let opts=optionsFor(field);
+  if(search){const q=search.toLowerCase(); opts=opts.filter(o=>(''+o.lbl).toLowerCase().includes(q));}
+  if(!opts.length) return `<div class="msrow" style="color:var(--mut)">${tr('No matches')}</div>`;
+  return opts.slice(0,400).map(o=>{
+    const on=sel.includes(o.v);
+    const val=typeof o.v=='string'?`'${o.v}'`:o.v;
+    return `<div class="msrow ${on?'on':''}" onclick="toggleVal('${field}',${val})"><span class="ck">${on?'✓':''}</span>${o.lbl}</div>`;
+  }).join('');
+}
+function ms(field,label){
+  const sel=state[field], open=state.openMS==field, count=sel.length;
+  return `<div class="ms">
+    <button class="mstrig ${count?'has':''}" onclick="toggleMS('${field}',event)">${label}${count?` · ${count}`:''} <span class="car">▾</span></button>
+    <div class="mspanel" style="display:${open?'block':'none'}">
+      <input class="mssearch" placeholder="${tr('Search…')}" value="${open?state.msSearch:''}" oninput="onSearch(this.value)" onclick="event.stopPropagation()">
+      <div class="msrows" id="msrows-${field}">${rowsHTML(field,open?state.msSearch:'')}</div>
+      ${count?`<div class="msclear" onclick="clearMS('${field}',event)">${tr('Clear')} ${count} ${tr('selected')}</div>`:''}
+    </div>
+  </div>`;
+}
+function ctxSelect(){
+  if(state.role=='mgmt') return '';
+  const schools=uniq(STUDENTS,'school').sort();
+  let h=`<div class="ctx">${tr('Viewing as')} <select onchange="setCtxSchool(this.value)">${schools.map(x=>`<option ${x==state.ctxSchool?'selected':''}>${x}</option>`).join('')}</select>`;
+  if(state.role=='fac'){
+    const classes=uniq(STUDENTS.filter(s=>s.school===state.ctxSchool),'fac').sort((a,b)=>a-b);
+    h+=`<select onchange="setCtxFac(this.value)">${classes.map(c=>`<option value="${c}" ${c==state.ctxFac?'selected':''}>${facName(c)}</option>`).join('')}</select>`;
+  }
+  return h+`</div>`;
+}
+function filterBar(){
+  let parts=[];
+  const ctx=ctxSelect(); if(ctx) parts.push(ctx);
+  if(state.role=='mgmt') parts.push(ms('fSchool',tr('School')));
+  if(state.role!='fac') parts.push(ms('fFac',tr('Facilitator')));
+  parts.push(ms('fStudent',tr('Student')));
+  const any=state.fSchool.length+state.fFac.length+state.fStudent.length;
+  if(any) parts.push(`<button class="clearall" onclick="clearAll()">${tr('Clear filters ✕')}</button>`);
+  return parts.join('');
+}
+
+function render(){
+  saveState();
+  document.documentElement.dir = state.lang=='ar'?'rtl':'ltr';
+  document.documentElement.lang = state.lang;
+  const RB={mgmt:'🏢 '+tr('Management'),leader:'🎓 '+tr('School Leader'),fac:'👤 '+tr('Facilitator')};
+  document.querySelectorAll('.role button[data-role]').forEach(b=>{b.classList.toggle('active',b.dataset.role===state.role); b.textContent=RB[b.dataset.role];});
+  document.getElementById('langbtn').textContent = state.lang=='ar'?'EN':'العربية';
+  document.getElementById('h-title').textContent=tr('Facilitators Operations Dashboard');
+  document.getElementById('h-sub').textContent=tr('Turning the semester dataset into who needs attention, why, and what to do next.');
+  document.getElementById('h-stat').innerHTML='427 '+tr('students')+' · 5 '+tr('schools')+' · 21 '+tr('classes')+'<br>'+tr('Semester snapshot');
+  if(state.role!='fac') state.tab='dashboard';   // Action Plan is facilitator-only
+  document.getElementById('sidebar').style.display = state.sbOpen?'':'none';
+  document.getElementById('sbtoggle').classList.toggle('on',state.sbOpen);
+  document.getElementById('sidebar').innerHTML=sidebar();
+  document.getElementById('filterbar').innerHTML=filterBar();
+  document.getElementById('crumb').innerHTML=scopeText();
+  const data=scoped(), a=agg(data), lvl=activeLevel(), lbl=scopeText();
+  if(state.tab=='action'){ document.getElementById('app').innerHTML=actionPlanView(data); return; }
+  if(state.tab=='today'){ document.getElementById('app').innerHTML=dailyOverview(data); return; }
+  const kpiBase = kpiBaseline();
+  let html = kpiCmpBar() + kpiRow(a, kpiBase);
+  if(lvl=='school'){
+    html+=levelTable(groupBy(data,'school'),'school','Schools — ranked by learning gain',
+      'The network at a glance. Spot which schools add the most value and which carry the most at-risk load.');
+    html+=`<div class="grid2">${mixCard(data,tr('All schools'))}${watchlist(data,tr('network-wide'))}</div>`;
+    html+=levelTable(groupBy(data,'fac'),'fac','All facilitators — ranked across the network',
+      'Every facilitator network-wide, ranked by the overall composite score. Coaching attention should follow the bottom.');
+  } else if(lvl=='class'){
+    html+=`<div class="grid2">${mixCard(data,lbl)}${watchlist(data,lbl)}</div>`;
+    html+=levelTable(groupBy(data,'fac'),'fac','Classes — ranked by learning gain',
+      'Compare facilitators on a like-for-like basis. Coaching attention should follow the bottom of this list.');
+  } else {
+    html+=`<div class="grid2">${mixCard(data,lbl)}${watchlist(data,lbl)}</div>`;
+    if(state.role=='fac') html+=metricsSection(data);
+    html+=studentTable(data);
+  }
+  document.getElementById('app').innerHTML=html;
+}
+function renderBar(){document.getElementById('filterbar').innerHTML=filterBar();}
+
+/* ---------- interactions ---------- */
+function drill(type,key){
+  if(type=='school'){state.fSchool=[key];state.fFac=[];state.fStudent=[];state.sort={key:'score',dir:-1};}
+  if(type=='fac'){state.fFac=[Number(key)];state.fStudent=[];state.sort={key:'tier',dir:1};}
+  state.openMS=null; render();
+}
+function reset(){state.fSchool=[];state.fFac=[];state.fStudent=[];render();}
+function clearAll(){state.fSchool=[];state.fFac=[];state.fStudent=[];render();}
+function sortBy(k){ if(state.sort.key===k)state.sort.dir*=-1; else state.sort={key:k,dir:k=='key'?1:-1}; render();}
+
+/* multi-select interactions */
+function toggleMS(field,e){e&&e.stopPropagation(); if(state.openMS==field){state.openMS=null;}else{state.openMS=field;state.msSearch='';} renderBar();}
+function toggleVal(field,v){
+  const a=state[field], i=a.indexOf(v);
+  if(i>=0)a.splice(i,1); else a.push(v);
+  if(field=='fSchool'){state.fFac=[];state.fStudent=[];}
+  if(field=='fFac'){state.fStudent=[];}
+  render();
+}
+function clearMS(field,e){e&&e.stopPropagation(); state[field]=[]; if(field=='fSchool'){state.fFac=[];state.fStudent=[];} if(field=='fFac')state.fStudent=[]; render();}
+function onSearch(v){state.msSearch=v; const c=document.getElementById('msrows-'+state.openMS); if(c)c.innerHTML=rowsHTML(state.openMS,v);}
+function setCtxSchool(v){state.ctxSchool=v; state.fSchool=[];state.fFac=[];state.fStudent=[]; if(state.role=='fac')state.ctxFac=firstClass(v); render();}
+function setCtxFac(v){state.ctxFac=Number(v); state.fStudent=[]; render();}
+
+document.querySelectorAll('.role button').forEach(b=>b.addEventListener('click',()=>{
+  state.role=b.dataset.role;
+  state.fSchool=[];state.fFac=[];state.fStudent=[];state.openMS=null;state.msSearch='';
+  if(state.role=='fac'){ state.ctxFac=firstClass(state.ctxSchool); state.tab='today'; }
+  state.sort=state.role=='fac'?{key:'tier',dir:1}:{key:'score',dir:-1};
+  render();
+}));
+document.addEventListener('click',e=>{ if(state.openMS && !e.target.closest('.ms')){state.openMS=null;renderBar();} });
+
+render();
+</script>
+</body>
+</html>
