@@ -242,7 +242,7 @@
   </div>
 </div>
 <script>
-  const GATE_PASSWORD="noon2026";  // ← غيّر كلمة المرور من هنا
+  const GATE_PASSWORD="noon2026";
   function tryGate(){const v=document.getElementById('gatePw').value;
     if(v===GATE_PASSWORD){localStorage.setItem('noonGate','1');document.getElementById('gate').style.display='none';}
     else{document.getElementById('gateErr').textContent='كلمة المرور غير صحيحة';}}
@@ -1042,7 +1042,7 @@ let state={role:'mgmt', lang:'ar', tab:'dashboard', sbOpen:true, apMetric:'overa
   fSchool:[], fFac:[], fStudent:[], openMS:null, msSearch:'',
   sort:{key:'score',dir:-1}};
 /* persist durable choices + supervisor inputs across sessions */
-const PERSIST=['lang','role','tab','ctxSchool','ctxFac','dayDate','cmpScope','kpiCmp','stars','todoDone','comments','outcomes'];
+const PERSIST=['lang','role','tab','sbOpen','ctxSchool','ctxFac','dayDate','cmpScope','kpiCmp','stars','todoDone','comments','outcomes'];
 function saveState(){try{const o={};PERSIST.forEach(k=>o[k]=state[k]);localStorage.setItem('noonDash',JSON.stringify(o));}catch(e){}}
 (function loadState(){try{const o=JSON.parse(localStorage.getItem('noonDash')||'{}');PERSIST.forEach(k=>{if(o[k]!=null)state[k]=o[k];});}catch(e){}})();
 function uniq(arr,k){return [...new Set(arr.map(x=>x[k]))];}
