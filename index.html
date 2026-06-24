@@ -1042,7 +1042,7 @@ let state={role:'fac', lang:'ar', tab:'today', sbOpen:true, apMetric:'overall', 
   fSchool:[], fFac:[], fStudent:[], openMS:null, msSearch:'',
   sort:{key:'score',dir:-1}};
 /* persist durable choices + supervisor inputs across sessions */
-const PERSIST=['lang','role','tab','sbOpen','ctxSchool','ctxFac','dayDate','cmpScope','kpiCmp','stars','todoDone','comments','outcomes'];
+const PERSIST=['lang','sbOpen','ctxSchool','ctxFac','dayDate','cmpScope','kpiCmp','stars','todoDone','comments','outcomes'];
 function saveState(){try{const o={};PERSIST.forEach(k=>o[k]=state[k]);localStorage.setItem('noonDash',JSON.stringify(o));}catch(e){}}
 (function loadState(){try{const o=JSON.parse(localStorage.getItem('noonDash')||'{}');PERSIST.forEach(k=>{if(o[k]!=null)state[k]=o[k];});}catch(e){}})();
 function uniq(arr,k){return [...new Set(arr.map(x=>x[k]))];}
