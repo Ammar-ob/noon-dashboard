@@ -373,7 +373,7 @@ const AR={
  "Qudrat Level is a learning-journey assignment, not a performance tier.":"مستوى قدرات هو تصنيف لرحلة التعلّم وليس مستوى أداء.",
  "All students — note & next action":"كل الطلاب — الملاحظة والإجراء التالي","Main note":"الملاحظة الأساسية",
  "Every student in your class at a glance, with the main note and the next action.":"كل طالب في فصلك بلمحة، مع الملاحظة الأساسية والإجراء التالي.",
- "Daily Action Plan":"خطة العمل الأسبوعية",
+ "Weekly Action Plan":"خطة العمل الأسبوعية",
  "Today's plan — 5 lowest-performing students":"خطة هذا الأسبوع — أضعف ٥ طلاب أداءً",
  "Sorted by overall score, with where they're weak and a to-do per student.":"مرتّبون حسب التقييم الإجمالي، مع موطن الضعف ومهمة لكل طالب.",
  "Teacher comment (required)":"تعليق المعلم (إلزامي)","Comment required before marking as done":"التعليق إلزامي قبل وضع علامة الإنجاز",
@@ -430,7 +430,7 @@ function sidebar(){
   const actionOn = state.role=='fac';
   const tabs=[];
   if(actionOn) tabs.push(['today','🗓️ '+tr("Today's overview"),true]);
-  tabs.push(['action','📋 '+tr('Daily Action Plan'),actionOn]);
+  tabs.push(['action','📋 '+tr('Weekly Action Plan'),actionOn]);
   tabs.push(['dashboard','📊 '+tr('Performance Dashboard'),true]);
   return tabs.map(([k,lbl,on])=>`<button data-tab="${k}" class="${state.tab==k?'active':''}" ${on?`onclick="setTab('${k}')"`:'disabled'}>${lbl}</button>`).join('');
 }
@@ -600,7 +600,7 @@ function actionPlanView(data){
     const g=groupBy(data,'level'), keys=Object.keys(g).sort();
     const groups=keys.map(k=>`<div class="card full"><h3><span class="dot" style="background:var(--blue)"></span> ${tr('Qudrat')} ${k.replace('L',tr('Level')+' ')} · ${g[k].length} (${Math.round(g[k].length/n*100)}%)</h3>
       <div class="pills">${g[k].map(s=>`<span class="namepill">${avatar(s).replace('avatar','avatar sm')}${s.name}</span>`).join('')}</div></div>`).join('');
-    return rosterCard+`<div class="card full"><h3>📋 ${tr('Daily Action Plan')} — ${scopeText()}</h3>${metricBar}
+    return rosterCard+`<div class="card full"><h3>📋 ${tr('Weekly Action Plan')} — ${scopeText()}</h3>${metricBar}
       <div class="apbrief">${tr('Qudrat Level is a learning-journey assignment, not a performance tier.')}</div></div>${groups}`;
   }
   const cats={great:[],mid:[],low:[]};
@@ -628,7 +628,7 @@ function actionPlanView(data){
         <input class="cmt" placeholder="${tr('Add supervisor comment…')}" value="${(state.comments[s.id]||'').replace(/"/g,'&quot;')}" oninput="setComment(${s.id},this.value)">
       </div></div>`;}).join('');
   return rosterCard+`
-   <div class="card full"><h3>📋 ${tr('Daily Action Plan')} — ${scopeText()}</h3>${metricBar}
+   <div class="card full"><h3>📋 ${tr('Weekly Action Plan')} — ${scopeText()}</h3>${metricBar}
      <div class="apbrief">${brief}</div>
      <div class="apchips">${chips}</div></div>
    <div class="card full"><h3><span class="dot" style="background:var(--green)"></span> ${tr('Doing great')} · ${cats.great.length}</h3>
