@@ -120,7 +120,7 @@
   .todo.done .todobody{opacity:.5}
   .todo.done .todohead b{text-decoration:line-through}
   .todobody{flex:1;min-width:0}
-  .todoaction{font-size:12.5px;color:var(--txt);margin:3px 0 7px}
+  .todoaction{font-size:12.5px;color:var(--txt);margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .cmt{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:7px 10px;font-size:12.5px;font-family:inherit}
   .cmt:focus{outline:none;border-color:var(--teal-d)}
   .cmt.reqd{border-color:var(--red)}
@@ -662,13 +662,17 @@ function actionPlanView(data){
   const pills=arr=>arr.length?arr.map(s=>tierRow(s)).join(''):`<span class="flag">—</span>`;
   const greatPills=arr=>arr.length?arr.map(s=>{const on=state.stars[s.id];
     return tierRow(s,`<button class="starbtn ${on?'on':''}" onclick="toggleStar(${s.id})" title="${tr('Give star')}">${on?'★':'☆'}</button>`);}).join(''):`<span class="flag">—</span>`;
-  const lowList=cats.low.map(s=>{const w=lowInfo(s,m); const done=state.todoDone[s.id];
+  const lowList=cats.low.map(s=>{const done=state.todoDone[s.id];
+    // actions tied to THIS student's actual weak areas
+    const tags = m.k=='overall' ? weakTags(s)
+      : [{ic:(AP_METRICS.find(x=>x.k==m.k)||{}).ic||'🎯', label:m.label, action:METRIC_LOW_ACTION[m.k]||'Review the case with the student.'}];
+    const acts = tags.map(t=>`<div class="todoaction"><span class="tag"><span>${t.ic}</span> ${tr(t.label)}</span> ${tr(t.action)}</div>`).join('');
     return `<div class="todo lowbox ${done?'done':''}">
       ${expBtn(s)}
       <input type="checkbox" ${done?'checked':''} onchange="toggleTodo(${s.id})">
       <div class="todobody">
-        <div class="todohead"><b>${s.name}</b> <span class="flag">· ${facName(s.fac)} · ${w.areas.map(a=>tr(a)).join(' · ')}</span></div>
-        <div class="todoaction">${tr(w.action)}</div>
+        <div class="todohead"><b>${s.name}</b> <span class="flag">· ${facName(s.fac)}</span></div>
+        ${acts}
         <input class="cmt" placeholder="${tr('Add supervisor comment…')}" value="${(state.comments[s.id]||'').replace(/"/g,'&quot;')}" oninput="setComment(${s.id},this.value)">
       </div></div>`;}).join('');
   return rosterCard+`
