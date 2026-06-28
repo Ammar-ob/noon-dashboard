@@ -134,6 +134,7 @@
   .impact.flat{background:rgba(138,153,168,.13);color:var(--mut)}
   [dir=rtl] .impact{margin-inline-start:0;margin-inline-end:32px}
   .actbtn.ai{border-color:#a78bfa;color:#a78bfa}
+  .actbtn.exp{border-color:var(--blue);color:var(--blue);padding:3px 9px;font-size:11px}
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;padding:20px}
   .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:560px;width:100%;box-shadow:var(--shadow)}
   .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);font-size:15px}
@@ -388,7 +389,7 @@ const AR={
  "No missions done today":"لم ينجز أي مهمة اليوم","Very low accuracy today":"دقة متدنّية جدًا اليوم","No participation today":"لم يشارك اليوم",
  "WhatsApp":"واتساب","Call":"اتصال","Send praise":"إرسال شكر","Praise sent to":"تم إرسال الشكر إلى",
  "AI-assisted draft — review before sending":"مسودة بمساعدة الذكاء الاصطناعي — راجعها قبل الإرسال","Copy":"نسخ",
- "Explain":"اشرح","Parent message":"رسالة لولي الأمر",
+ "Explain":"اشرح","Parent message":"رسالة لولي الأمر","View explanation":"استعراض الشرح",
  "Show all metrics":"عرض كل المؤشرات","Show key metrics only":"عرض المؤشرات الأساسية فقط",
  "Your class":"فصلك","The rest":"بقية الطلاب",
  "Improved since":"تحسّن منذ التدخل","No change yet — keep following up":"لا تغيّر بعد — واصل المتابعة",
@@ -453,6 +454,36 @@ function toggleNote(id){state.openNote=state.openNote==id?null:id; state.needCom
 /* performance score (outcome + gain + accuracy + mastery) → category */
 function perf(s){return compositeScore(s);}   // now blends ALL metrics
 function perfCat(s){const p=perf(s); return p>=0.70?'great':(p<0.60?'low':'mid');}
+/* full explanation of why a student is in their performance tier (for the supervisor) */
+function explainTier(id){
+  const s=STUDENTS.find(x=>x.id==id), ar=state.lang=='ar';
+  const score=Math.round(compositeScore(s)*100), cat=perfCat(s);
+  const catName={great:ar?'أداء ممتاز':'High performance',mid:ar?'أداء متوسط':'Mid performance',low:ar?'أداء منخفض':'Low performance'}[cat];
+  const M=[['eoc','نهاية المقرر','EOC mastery'],['att','الحضور','Attendance'],['mission','إكمال المهام','Mission completion'],['corr','دقة التدريب','Practice accuracy'],['exit','تذكرة الخروج','Exit tickets'],['trust','الثقة','Trust'],['temp','المشاركة','Participation'],['diag','التشخيصي','Diagnostic (start)']];
+  const strong=[],weak=[];
+  M.forEach(([k,aw,en])=>{const v=s[k]; if(v==null)return; const lbl=(ar?aw:en)+` (${Math.round(v*100)}%)`;
+    if(v>=0.70) strong.push(lbl); else if(v<0.50) weak.push(lbl);});
+  const g=growth(s), gTxt = g==null?'':(ar?`التحسّن التعليمي: ${g>=0?'+':''}${f2(g)} نقطة.`:`Learning gain: ${g>=0?'+':''}${f2(g)} pts.`);
+  const lines=[];
+  if(ar){
+    lines.push(`الطالب **${s.name}** — التقييم الإجمالي **${score}%**، وبهذا صُنّف ضمن «**${catName}**».`);
+    lines.push(`المؤشر الإجمالي يجمع كل المقاييس العشرة (نهاية المقرر، التحسّن، الحضور، المهام، الثقة، التدريب، الدقة، الخروج، المشاركة، التشخيصي).`);
+    lines.push(`عتبات التصنيف: ممتاز ≥ 70% · متوسط 60–70% · منخفض < 60%.`);
+    if(strong.length) lines.push(`نقاط القوة: ${strong.join('، ')}.`);
+    if(weak.length) lines.push(`نقاط الضعف: ${weak.join('، ')}.`);
+    if(gTxt) lines.push(gTxt);
+    lines.push(cat=='great'?`الخلاصة: أداء قوي ومتسق — حافظ على الزخم وادفعه أبعد.`:cat=='mid'?`الخلاصة: أداء متوسط — معالجة نقاط الضعف ترفعه لفئة الممتاز.`:`الخلاصة: أداء منخفض — يحتاج تدخّلًا وتركيزًا على نقاط الضعف أعلاه.`);
+  } else {
+    lines.push(`**${s.name}** — overall score **${score}%**, which places them in "**${catName}**".`);
+    lines.push(`The overall score blends all 10 metrics (EOC, gain, attendance, missions, trust, practice, accuracy, exit, participation, diagnostic).`);
+    lines.push(`Tier thresholds: High ≥ 70% · Mid 60–70% · Low < 60%.`);
+    if(strong.length) lines.push(`Strengths: ${strong.join(', ')}.`);
+    if(weak.length) lines.push(`Weak spots: ${weak.join(', ')}.`);
+    if(gTxt) lines.push(gTxt);
+    lines.push(cat=='great'?`Bottom line: strong, consistent performance — keep the momentum and stretch them.`:cat=='mid'?`Bottom line: average — closing the weak spots would lift them to the top tier.`:`Bottom line: low — needs intervention focused on the weak spots above.`);
+  }
+  openModal('🧾 '+catName+' — '+s.name, lines.join('\n\n'));
+}
 
 /* per-KPI segmentation for the Action Plan */
 const AP_METRICS=[
@@ -616,14 +647,15 @@ function actionPlanView(data){
       : `Split by “${tr(m.label)}”: <b>${cats.great.length}</b> good (${pc('great')}%), <b>${cats.mid.length}</b> mid (${pc('mid')}%), <b>${cats.low.length}</b> low (${pc('low')}%).`);
   const chips=[['great','Doing great','var(--green)'],['mid','Mid performance','var(--amber)'],['low','Low performance','var(--red)']]
     .map(c=>`<div class="apchip" style="border-color:${c[2]}"><div class="apnum" style="color:${c[2]}">${cats[c[0]].length}</div><div class="aplbl">${tr(c[1])}</div><div class="appct">${pc(c[0])}%</div></div>`).join('');
-  const pills=arr=>arr.length?arr.map(s=>`<span class="namepill">${avatar(s).replace('avatar','avatar sm')}${s.name}</span>`).join(''):`<span class="flag">—</span>`;
+  const expBtn=s=>`<button class="actbtn exp" onclick="explainTier(${s.id})" title="${tr('View explanation')}">🧾 ${tr('View explanation')}</button>`;
+  const pills=arr=>arr.length?arr.map(s=>`<span class="namepill">${avatar(s).replace('avatar','avatar sm')}${s.name}${expBtn(s)}</span>`).join(''):`<span class="flag">—</span>`;
   const greatPills=arr=>arr.length?arr.map(s=>{const on=state.stars[s.id];
-    return `<span class="namepill ${on?'starred':''}">${avatar(s).replace('avatar','avatar sm')}${s.name}<button class="starbtn ${on?'on':''}" onclick="toggleStar(${s.id})" title="${tr('Give star')}">${on?'★':'☆'}</button></span>`;}).join(''):`<span class="flag">—</span>`;
+    return `<span class="namepill ${on?'starred':''}">${avatar(s).replace('avatar','avatar sm')}${s.name}<button class="starbtn ${on?'on':''}" onclick="toggleStar(${s.id})" title="${tr('Give star')}">${on?'★':'☆'}</button>${expBtn(s)}</span>`;}).join(''):`<span class="flag">—</span>`;
   const lowList=cats.low.map(s=>{const w=lowInfo(s,m); const done=state.todoDone[s.id];
     return `<div class="todo ${done?'done':''}">
       <input type="checkbox" ${done?'checked':''} onchange="toggleTodo(${s.id})">
       <div class="todobody">
-        <div class="todohead"><b>${s.name}</b> <span class="flag">· ${facName(s.fac)} · ${w.areas.map(a=>tr(a)).join(' · ')}</span></div>
+        <div class="todohead"><b>${s.name}</b> <span class="flag">· ${facName(s.fac)} · ${w.areas.map(a=>tr(a)).join(' · ')}</span>${expBtn(s)}</div>
         <div class="todoaction">${tr(w.action)}</div>
         <input class="cmt" placeholder="${tr('Add supervisor comment…')}" value="${(state.comments[s.id]||'').replace(/"/g,'&quot;')}" oninput="setComment(${s.id},this.value)">
       </div></div>`;}).join('');
@@ -678,7 +710,7 @@ function renderModal(){
   const m=document.getElementById('modal'); if(!state.modal){m.style.display='none';return;}
   m.innerHTML=`<div class="modal-box">
     <div class="modal-head"><b>${state.modal.title}</b><button class="modal-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body">${state.modal.text.replace(/\n/g,'<br>')}</div>
+    <div class="modal-body">${state.modal.text.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}</div>
     <div class="modal-foot"><span class="flag">${tr('AI-assisted draft — review before sending')}</span>
       <button class="actbtn" id="copybtn" onclick="copyModal()">📋 ${tr('Copy')}</button></div>
   </div>`;
