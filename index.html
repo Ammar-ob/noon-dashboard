@@ -135,6 +135,10 @@
   [dir=rtl] .impact{margin-inline-start:0;margin-inline-end:32px}
   .actbtn.ai{border-color:#a78bfa;color:#a78bfa}
   .actbtn.exp{border-color:var(--blue);color:var(--blue);padding:3px 9px;font-size:11px}
+  .prow2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);margin-bottom:8px}
+  .prow2-name{display:flex;align-items:center;gap:6px;font-size:13.5px;flex-wrap:wrap}
+  .lowbox{position:relative}
+  .lowbox>.actbtn.exp{position:absolute;top:10px;inset-inline-end:12px}
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;padding:20px}
   .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:560px;width:100%;box-shadow:var(--shadow)}
   .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);font-size:15px}
@@ -652,14 +656,18 @@ function actionPlanView(data){
   const chips=[['great','Doing great','var(--green)'],['mid','Mid performance','var(--amber)'],['low','Low performance','var(--red)']]
     .map(c=>`<div class="apchip" style="border-color:${c[2]}"><div class="apnum" style="color:${c[2]}">${cats[c[0]].length}</div><div class="aplbl">${tr(c[1])}</div><div class="appct">${pc(c[0])}%</div></div>`).join('');
   const expBtn=s=>`<button class="actbtn exp" onclick="explainTier(${s.id})" title="${tr('View explanation')}">🧾 ${tr('View explanation')}</button>`;
-  const pills=arr=>arr.length?arr.map(s=>`<span class="namepill">${avatar(s).replace('avatar','avatar sm')}${s.name}${expBtn(s)}</span>`).join(''):`<span class="flag">—</span>`;
+  const tierRow=(s,extra)=>`<div class="prow2">
+    <span class="prow2-name">${avatar(s).replace('avatar','avatar sm')}<b>${s.name}</b> <span class="flag">${pct(compositeScore(s))}</span>${extra||''}</span>
+    ${expBtn(s)}</div>`;
+  const pills=arr=>arr.length?arr.map(s=>tierRow(s)).join(''):`<span class="flag">—</span>`;
   const greatPills=arr=>arr.length?arr.map(s=>{const on=state.stars[s.id];
-    return `<span class="namepill ${on?'starred':''}">${avatar(s).replace('avatar','avatar sm')}${s.name}<button class="starbtn ${on?'on':''}" onclick="toggleStar(${s.id})" title="${tr('Give star')}">${on?'★':'☆'}</button>${expBtn(s)}</span>`;}).join(''):`<span class="flag">—</span>`;
+    return tierRow(s,`<button class="starbtn ${on?'on':''}" onclick="toggleStar(${s.id})" title="${tr('Give star')}">${on?'★':'☆'}</button>`);}).join(''):`<span class="flag">—</span>`;
   const lowList=cats.low.map(s=>{const w=lowInfo(s,m); const done=state.todoDone[s.id];
-    return `<div class="todo ${done?'done':''}">
+    return `<div class="todo lowbox ${done?'done':''}">
+      ${expBtn(s)}
       <input type="checkbox" ${done?'checked':''} onchange="toggleTodo(${s.id})">
       <div class="todobody">
-        <div class="todohead"><b>${s.name}</b> <span class="flag">· ${facName(s.fac)} · ${w.areas.map(a=>tr(a)).join(' · ')}</span>${expBtn(s)}</div>
+        <div class="todohead"><b>${s.name}</b> <span class="flag">· ${facName(s.fac)} · ${w.areas.map(a=>tr(a)).join(' · ')}</span></div>
         <div class="todoaction">${tr(w.action)}</div>
         <input class="cmt" placeholder="${tr('Add supervisor comment…')}" value="${(state.comments[s.id]||'').replace(/"/g,'&quot;')}" oninput="setComment(${s.id},this.value)">
       </div></div>`;}).join('');
