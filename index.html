@@ -454,35 +454,39 @@ function toggleNote(id){state.openNote=state.openNote==id?null:id; state.needCom
 /* performance score (outcome + gain + accuracy + mastery) → category */
 function perf(s){return compositeScore(s);}   // now blends ALL metrics
 function perfCat(s){const p=perf(s); return p>=0.70?'great':(p<0.60?'low':'mid');}
-/* full explanation of why a student is in their performance tier (for the supervisor) */
+/* clear, action-oriented explanation of a student's tier + how to move them up */
 function explainTier(id){
   const s=STUDENTS.find(x=>x.id==id), ar=state.lang=='ar';
   const score=Math.round(compositeScore(s)*100), cat=perfCat(s);
   const catName={great:ar?'أداء ممتاز':'High performance',mid:ar?'أداء متوسط':'Mid performance',low:ar?'أداء منخفض':'Low performance'}[cat];
-  const M=[['eoc','نهاية المقرر','EOC mastery'],['att','الحضور','Attendance'],['mission','إكمال المهام','Mission completion'],['corr','دقة التدريب','Practice accuracy'],['exit','تذكرة الخروج','Exit tickets'],['trust','الثقة','Trust'],['temp','المشاركة','Participation'],['diag','التشخيصي','Diagnostic (start)']];
-  const strong=[],weak=[];
-  M.forEach(([k,aw,en])=>{const v=s[k]; if(v==null)return; const lbl=(ar?aw:en)+` (${Math.round(v*100)}%)`;
-    if(v>=0.70) strong.push(lbl); else if(v<0.50) weak.push(lbl);});
-  const g=growth(s), gTxt = g==null?'':(ar?`التحسّن التعليمي: ${g>=0?'+':''}${f2(g)} نقطة.`:`Learning gain: ${g>=0?'+':''}${f2(g)} pts.`);
-  const lines=[];
-  if(ar){
-    lines.push(`الطالب **${s.name}** — التقييم الإجمالي **${score}%**، وبهذا صُنّف ضمن «**${catName}**».`);
-    lines.push(`المؤشر الإجمالي يجمع كل المقاييس العشرة (نهاية المقرر، التحسّن، الحضور، المهام، الثقة، التدريب، الدقة، الخروج، المشاركة، التشخيصي).`);
-    lines.push(`عتبات التصنيف: ممتاز ≥ 70% · متوسط 60–70% · منخفض < 60%.`);
-    if(strong.length) lines.push(`نقاط القوة: ${strong.join('، ')}.`);
-    if(weak.length) lines.push(`نقاط الضعف: ${weak.join('، ')}.`);
-    if(gTxt) lines.push(gTxt);
-    lines.push(cat=='great'?`الخلاصة: أداء قوي ومتسق — حافظ على الزخم وادفعه أبعد.`:cat=='mid'?`الخلاصة: أداء متوسط — معالجة نقاط الضعف ترفعه لفئة الممتاز.`:`الخلاصة: أداء منخفض — يحتاج تدخّلًا وتركيزًا على نقاط الضعف أعلاه.`);
-  } else {
-    lines.push(`**${s.name}** — overall score **${score}%**, which places them in "**${catName}**".`);
-    lines.push(`The overall score blends all 10 metrics (EOC, gain, attendance, missions, trust, practice, accuracy, exit, participation, diagnostic).`);
-    lines.push(`Tier thresholds: High ≥ 70% · Mid 60–70% · Low < 60%.`);
-    if(strong.length) lines.push(`Strengths: ${strong.join(', ')}.`);
-    if(weak.length) lines.push(`Weak spots: ${weak.join(', ')}.`);
-    if(gTxt) lines.push(gTxt);
-    lines.push(cat=='great'?`Bottom line: strong, consistent performance — keep the momentum and stretch them.`:cat=='mid'?`Bottom line: average — closing the weak spots would lift them to the top tier.`:`Bottom line: low — needs intervention focused on the weak spots above.`);
+  const M=[['eoc','نهاية المقرر','EOC mastery'],['corr','دقة التدريب','Practice accuracy'],['exit','تذكرة الخروج','Exit tickets'],['mission','إكمال المهام','Mission completion'],['att','الحضور','Attendance'],['temp','المشاركة','Participation'],['trust','الثقة','Trust']];
+  const strong=[],focus=[];
+  M.forEach(([k,aw,en])=>{const v=s[k]; if(v==null)return; const lbl=ar?aw:en;
+    if(v>=0.75) strong.push(`${lbl} ${Math.round(v*100)}%`);
+    else if(v<0.6) focus.push({lbl,pct:Math.round(v*100),act:tr(METRIC_LOW_ACTION[k]||'')});});
+  focus.sort((a,b)=>a.pct-b.pct);
+  const top=focus.slice(0,3);
+  const L=[];
+  // headline
+  L.push(ar?`**${s.name}** · التقييم الإجمالي **${score}%** · **${catName}**`
+           :`**${s.name}** · overall **${score}%** · **${catName}**`);
+  L.push('───');
+  // strengths
+  if(strong.length) L.push((ar?'✅ **نقاط القوة:** ':'✅ **Strengths:** ')+strong.join(ar?' · ':' · '));
+  // focus areas with actions
+  if(top.length){
+    L.push(ar?'🎯 **ركّز هنا (الأضعف أولًا):**':'🎯 **Focus here (weakest first):**');
+    top.forEach(f=>L.push(`• **${f.lbl} (${f.pct}%)** — ${f.act}`));
   }
-  openModal('🧾 '+catName+' — '+s.name, lines.join('\n\n'));
+  // next-step to move up a tier
+  L.push('───');
+  if(cat=='low') L.push(ar?'⬆️ **للوصول للأداء المتوسط:** عالِج أول نقطة ضعف أعلاه هذا الأسبوع، وتابع أثرها.'
+                          :'⬆️ **To reach Mid:** tackle the top focus area above this week and track the impact.');
+  else if(cat=='mid') L.push(ar?'⬆️ **للوصول للأداء الممتاز:** ارفع نقطة أو نقطتين من «ركّز هنا» فوق 75%.'
+                              :'⬆️ **To reach High:** lift one or two focus areas above 75%.');
+  else L.push(ar?'🌟 **حافظ على تميّزه:** امنحه تحديًا أكبر ودورًا قياديًا، وكافئ تقدّمه.'
+                :'🌟 **Keep them excelling:** give a stretch challenge and a leadership role, and recognise progress.');
+  openModal((cat=='great'?'🌟 ':cat=='low'?'⚠️ ':'📊 ')+catName, L.join('\n'));
 }
 
 /* per-KPI segmentation for the Action Plan */
