@@ -467,7 +467,7 @@ function explainTier(id){
   const strong=[],focus=[];
   M.forEach(([k,aw,en])=>{const v=s[k]; if(v==null)return; const lbl=ar?aw:en;
     if(v>=0.75) strong.push(`${lbl} ${Math.round(v*100)}%`);
-    else if(v<0.6) focus.push({lbl,pct:Math.round(v*100),act:tr(METRIC_LOW_ACTION[k]||'')});});
+    else if(v<0.6) focus.push({lbl,pct:Math.round(v*100),act:pickAction(k,s.id)});});
   focus.sort((a,b)=>a.pct-b.pct);
   const top=focus.slice(0,3);
   const L=[];
@@ -507,17 +507,56 @@ const AP_METRICS=[
   {k:'exit',ic:'🎫',label:'Exit Ticket Correctness %',g:.72,l:.55},
   {k:'temp',ic:'🌡️',label:'Classroom Temp %',g:.80,l:.50}
 ];
-const METRIC_LOW_ACTION={
-  diag:'Sit with him to set a simple goal and nudge him to ask the teacher for a foundation plan.',
-  eoc:'Connect him with the teacher to review the hard concepts; encourage him to ask more in class.',
-  att:'Reach out to the student/home about absences and re-engage him.',
-  mission:'Ask why missions stall (time, difficulty, or motivation) and remove the blocker.',
-  trust:'Check in on how he feels about class and relay his feedback to the teacher.',
-  practice:'Encourage a simple daily practice habit and follow up.',
-  corr:'Encourage him to review his mistakes with the teacher and ask about the right approach.',
-  exit:'Note where he loses focus in class and prompt him to ask the moment he is confused.',
-  temp:'Involve him more in class, give him a role, and encourage him to participate and ask.'
+/* varied, growth-oriented supervisor actions per weakness — self-learning, peer practice,
+   learning from top students, class contribution, online research, routines… not just "see the teacher". */
+const ACTION_LIB={
+  eoc:[
+    {ar:'اربطه بأحد المتفوّقين في الصف ليراجع معه المفاهيم الصعبة.',en:'Pair him with a top student to review the hard concepts together.'},
+    {ar:'شجّعه على البحث عن شرح مبسّط للمفهوم على الإنترنت قبل الحصة.',en:'Encourage him to look up a simple explanation online before class.'},
+    {ar:'حثّه على السؤال فور أول التباس بدل تأجيله.',en:'Nudge him to ask the moment he is confused instead of waiting.'},
+    {ar:'خصّص له مراجعة ذاتية يومية قصيرة للمفاهيم الأساسية.',en:'Set a short daily self-review of the core concepts.'}],
+  corr:[
+    {ar:'شجّعه على مراجعة أخطائه بنفسه وتدوين نوع كل خطأ.',en:'Have him review his own mistakes and note the type of each error.'},
+    {ar:'اربطه بزميل متمكّن يتدرّبان معًا ويصحّح كل منهما للآخر.',en:'Pair him with a strong peer to practise and check each other.'},
+    {ar:'حثّه على البحث عن أمثلة محلولة مشابهة على الإنترنت.',en:'Have him find similar solved examples online.'},
+    {ar:'اطلب منه شرح حلّه بصوت عالٍ لزميل للتأكد من فهمه.',en:'Ask him to explain his solution aloud to a peer.'}],
+  exit:[
+    {ar:'اطلب منه تلخيص أهم نقطة تعلّمها في نهاية كل حصة.',en:'Ask him to summarise the key takeaway at the end of each class.'},
+    {ar:'شجّعه على مراجعة ذاتية سريعة (٥ دقائق) بعد كل حصة.',en:'Encourage a quick 5-minute self-review after each class.'},
+    {ar:'اربطه بمجموعة مذاكرة صغيرة لمراجعة محتوى الحصة.',en:'Connect him with a small study group to review the session.'}],
+  mission:[
+    {ar:'ساعده على تقسيم المهام إلى خطوات صغيرة وجدولتها.',en:'Help him break tasks into small steps and schedule them.'},
+    {ar:'اربطه بزميل ملتزم لإنجاز المهام معًا.',en:'Pair him with a committed peer to finish missions together.'},
+    {ar:'اعرف سبب التعثّر (وقت/صعوبة/دافعية) وذلّل العائق.',en:'Find why missions stall (time/difficulty/motivation) and remove the blocker.'},
+    {ar:'ضع له هدفًا يوميًا بسيطًا وتابع إنجازه.',en:'Set a simple daily goal and follow up on it.'}],
+  att:[
+    {ar:'تواصل مع الطالب/الأهل لمعرفة سبب الغياب.',en:'Reach out to the student/home to understand the absences.'},
+    {ar:'اربطه بزميل يذكّره ويحضر معه.',en:'Pair him with a peer who reminds him and attends with him.'},
+    {ar:'ابنِ معه روتينًا للحضور وكافئ الانتظام.',en:'Build an attendance routine with him and reward consistency.'}],
+  temp:[
+    {ar:'امنحه دورًا واضحًا في الحصة ليشارك.',en:'Give him a clear role in class so he participates.'},
+    {ar:'شجّعه على طرح سؤال واحد على الأقل كل حصة.',en:'Encourage him to ask at least one question each class.'},
+    {ar:'اربطه بمجموعة نقاش صغيرة ليعبّر بثقة.',en:'Put him in a small discussion group to speak up with confidence.'},
+    {ar:'كلّفه بعرض فكرة بسيطة أمام زملائه.',en:'Task him with presenting a simple idea to peers.'}],
+  trust:[
+    {ar:'اطمئن على شعوره تجاه الصف واستمع له.',en:'Check in on how he feels about class and listen.'},
+    {ar:'اربطه بزميل داعم ليشعر بالانتماء.',en:'Pair him with a supportive peer so he feels included.'},
+    {ar:'أشركه في قرار صغير بالصف ليزيد ارتباطه.',en:'Involve him in a small class decision to build ownership.'}],
+  practice:[
+    {ar:'ساعده على بناء روتين تدريب يومي قصير.',en:'Help him build a short daily practice routine.'},
+    {ar:'اربطه بزميل يتدرّبان معًا بانتظام.',en:'Pair him with a peer to practise together regularly.'},
+    {ar:'شجّعه على استخدام مصادر تدريب إضافية على الإنترنت.',en:'Encourage using extra practice resources online.'},
+    {ar:'حدّد له هدف عدد تمارين يومي بسيط وتابعه.',en:'Set a simple daily practice target and track it.'}],
+  diag:[
+    {ar:'اجلس معه وحدّد هدفًا بسيطًا للانطلاق.',en:'Sit with him and set a simple starting goal.'},
+    {ar:'اربطه بزميل متمكّن لمساعدته في الأساسيات.',en:'Pair him with a strong peer to help with the basics.'}]
 };
+/* pick a varied action deterministically per student so it stays stable but differs between students */
+function pickAction(k,id){
+  const arr=ACTION_LIB[k]; if(!arr) return state.lang=='ar'?'راجع الحالة مع الطالب.':'Review the case with the student.';
+  const a=arr[Math.abs(hashStr(''+id+'#'+k))%arr.length];
+  return state.lang=='ar'?a.ar:a.en;
+}
 function apCat(s,m){
   if(m.k=='overall') return perfCat(s);
   const v=s[m.k]; if(v==null) return 'mid';
@@ -557,8 +596,8 @@ function execSummary(s){
       return x.m.k=='practice'?(ar?`${lbl} أقل بكثير`:`much lower ${lbl.toLowerCase()}`)
         :(ar?`${lbl} (−${Math.round(Math.abs(x.gap)*100)} نقطة)`:`${lbl.toLowerCase()} (−${Math.round(Math.abs(x.gap)*100)} pts)`);};
     parts.push(ar?`أبرز الفجوات مقابل زملائه: ${gaps.map(ph).join(' و')}.`:`Biggest gaps vs classmates: ${gaps.map(ph).join(' & ')}.`);
-    const act=METRIC_LOW_ACTION[gaps[0].m.k];
-    if(act) parts.push(ar?`الحل: ${tr(act)}`:`Fix: ${tr(act)}`);
+    const act=pickAction(gaps[0].m.k,s.id);
+    if(act) parts.push(ar?`الحل: ${act}`:`Fix: ${act}`);
   } else {
     parts.push(ar?`لا يوجد سبب واحد واضح — جلسة فردية لتحديد الفجوة.`:`No single clear driver — hold a 1:1 to pinpoint the gap.`);
   }
@@ -573,7 +612,7 @@ function weakTags(s){
     .map(m=>{
       const avg=meanOf(peers,m.k);
       const sev=avg==null?(m.l-s[m.k]):(m.k=='practice'?(avg-s[m.k])/(avg||1):avg-s[m.k]); // how far below the class
-      return {k:m.k, ic:m.ic, label:m.label, action:METRIC_LOW_ACTION[m.k]||'Review the case with the student.', sev};
+      return {k:m.k, ic:m.ic, label:m.label, action:pickAction(m.k,s.id), sev};
     })
     .sort((a,b)=>b.sev-a.sev)
     .slice(0,2);
@@ -582,23 +621,23 @@ function weakTags(s){
 }
 function lowInfo(s,m){
   if(m.k=='overall') return whereLow(s);
-  return {areas:[m.label], action:METRIC_LOW_ACTION[m.k]||'Overall low — 1:1 to set clear targets.'};
+  return {areas:[m.label], action:pickAction(m.k,s.id)};
 }
 function setApMetric(k){state.apMetric=k; render();}
 /* for a low performer: which area drives it + a targeted action */
 function whereLow(s){
   const g=(s.eoc!=null&&s.diag!=null)?s.eoc-s.diag:1;
   const checks=[
-    ['EOC mastery', s.eoc!=null&&s.eoc<0.55, METRIC_LOW_ACTION.eoc],
-    ['Practice accuracy', s.corr!=null&&s.corr<0.35, METRIC_LOW_ACTION.corr],
-    ['Learning gain', g<0.05, 'Sit with him to understand the drop and reconnect him with the teacher for a plan this week.'],
-    ['Exit tickets', s.exit!=null&&s.exit<0.55, METRIC_LOW_ACTION.exit],
-    ['Mission completion', s.mission!=null&&s.mission<0.6, METRIC_LOW_ACTION.mission],
-    ['Attendance', s.att!=null&&s.att<0.8, METRIC_LOW_ACTION.att],
-    ['Trust', s.trust!=null&&s.trust<0.5, METRIC_LOW_ACTION.trust]
+    ['EOC mastery', s.eoc!=null&&s.eoc<0.55, 'eoc'],
+    ['Practice accuracy', s.corr!=null&&s.corr<0.35, 'corr'],
+    ['Learning gain', g<0.05, 'eoc'],
+    ['Exit tickets', s.exit!=null&&s.exit<0.55, 'exit'],
+    ['Mission completion', s.mission!=null&&s.mission<0.6, 'mission'],
+    ['Attendance', s.att!=null&&s.att<0.8, 'att'],
+    ['Trust', s.trust!=null&&s.trust<0.5, 'trust']
   ].filter(c=>c[1]);
-  if(!checks.length) return {areas:['Overall low'], action:'Review the case with the student.'};
-  return {areas:checks.slice(0,2).map(c=>c[0]), action:checks[0][2]};
+  if(!checks.length) return {areas:['Overall low'], action:(state.lang=='ar'?'راجع الحالة مع الطالب.':'Review the case with the student.')};
+  return {areas:checks.slice(0,2).map(c=>c[0]), action:pickAction(checks[0][2],s.id)};
 }
 
 function actionPlanView(data){
@@ -665,7 +704,7 @@ function actionPlanView(data){
   const lowList=cats.low.map(s=>{const done=state.todoDone[s.id];
     // actions tied to THIS student's actual weak areas
     const tags = m.k=='overall' ? weakTags(s)
-      : [{ic:(AP_METRICS.find(x=>x.k==m.k)||{}).ic||'🎯', label:m.label, action:METRIC_LOW_ACTION[m.k]||'Review the case with the student.'}];
+      : [{ic:(AP_METRICS.find(x=>x.k==m.k)||{}).ic||'🎯', label:m.label, action:pickAction(m.k,s.id)}];
     const acts = tags.map(t=>`<div class="todoaction"><span class="tag"><span>${t.ic}</span> ${tr(t.label)}</span> ${tr(t.action)}</div>`).join('');
     return `<div class="todo lowbox ${done?'done':''}">
       ${expBtn(s)}
