@@ -239,7 +239,7 @@
 <div id="gate" style="position:fixed;inset:0;z-index:1000;background:#0f1419;display:flex;align-items:center;justify-content:center">
   <div style="background:#171e26;border:1px solid #2a3540;border-radius:16px;padding:34px 30px;width:320px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5)">
     <div style="font-size:28px;font-weight:800;color:#1ec8a5;letter-spacing:-1px">no·on</div>
-    <div style="color:#8a99a8;font-size:13px;margin:8px 0 20px">لوحة عمليات الميسّرين — الدخول</div>
+    <div style="color:#8a99a8;font-size:13px;margin:8px 0 20px">لوحة عمليات المشرفين — الدخول</div>
     <input id="gatePw" type="password" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')tryGate()"
       style="width:100%;background:#0f1419;border:1px solid #2a3540;color:#e8edf2;border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;text-align:center">
     <div id="gateErr" style="color:#f06a6a;font-size:12px;height:16px;margin-top:8px"></div>
@@ -297,10 +297,10 @@ function facName(f){return (FAC_NAMES[f]||FAC_NAMES[String(f)]||"Facilitator")+"
 <script>
 /* ---------- i18n ---------- */
 const AR={
- "Facilitators Operations Dashboard":"لوحة عمليات الميسّرين",
+ "Facilitators Operations Dashboard":"لوحة عمليات المشرفين",
  "Turning the semester dataset into who needs attention, why, and what to do next.":"تحويل بيانات الفصل الدراسي إلى: من يحتاج اهتمامًا، ولماذا، وما الإجراء التالي.",
  "students":"طالب","schools":"مدارس","classes":"فصول","Semester snapshot":"لقطة الفصل الدراسي",
- "Management":"الإدارة","School Leader":"قائد المدرسة","Facilitator":"الميسّر","Student":"الطالب","School":"المدرسة","Students":"الطلاب",
+ "Management":"الإدارة","School Leader":"قائد المدرسة","Facilitator":"المشرف","Student":"الطالب","School":"المدرسة","Students":"الطلاب",
  "Viewing as":"العرض بصفة","Search…":"بحث…","Clear filters ✕":"مسح عوامل التصفية ✕","No matches":"لا نتائج","Clear":"مسح","selected":"محدد",
  "Network overview · all 5 schools":"نظرة عامة · جميع المدارس الخمس",
  "all classes":"جميع الفصول","selected classes":"الفصول المحددة","students selected":"طالب محدد","your students":"طلابك","Classes in":"فصول",
@@ -311,12 +311,12 @@ const AR={
  "On track":"على المسار","Watch/Medium":"مراقبة/متوسط","High priority":"أولوية عالية","Watch":"مراقبة","High":"عالية","Medium":"متوسطة",
  "Mission completion":"إكمال المهام","Practice accuracy":"دقة التدريب","Exit-ticket mastery":"إتقان تذكرة الخروج","Trust":"الثقة","Classroom temp":"المشاركة",
  "Top priority students":"الطلاب ذوو الأولوية القصوى","None flagged high 🎉":"لا يوجد طلاب بأولوية عالية 🎉","network-wide":"جميع المدارس","All schools":"جميع المدارس",
- "Learning gain ▸ ranked":"التحسّن التعليمي ▸ مرتبة","EOC mastery":"إتقان نهاية المقرر","Attendance":"الحضور","facilitators":"ميسّر",
+ "Learning gain ▸ ranked":"التحسّن التعليمي ▸ مرتبة","EOC mastery":"إتقان نهاية المقرر","Attendance":"الحضور","facilitators":"مشرف",
  "Schools — ranked by learning gain":"المدارس — مرتبة حسب التحسّن التعليمي","Classes — ranked by learning gain":"الفصول — مرتبة حسب التحسّن التعليمي",
- "All facilitators — ranked across the network":"كل الميسّرين — مرتّبون جميع المدارس",
- "Every facilitator network-wide, ranked by the overall composite score. Coaching attention should follow the bottom.":"كل ميسّر جميع المدارس، مرتّب حسب التقييم الإجمالي المركّب. يجب أن يتجه الدعم نحو أسفل القائمة.",
+ "All facilitators — ranked across the network":"كل المشرفين — مرتّبون جميع المدارس",
+ "Every facilitator network-wide, ranked by the overall composite score. Coaching attention should follow the bottom.":"كل مشرف جميع المدارس، مرتّب حسب التقييم الإجمالي المركّب. يجب أن يتجه الدعم نحو أسفل القائمة.",
  "The network at a glance. Spot which schools add the most value and which carry the most at-risk load.":"جميع المدارس بلمحة. حدّد المدارس الأكثر إضافةً للقيمة والأكثر تحمّلًا للطلاب المعرّضين للخطر.",
- "Compare facilitators on a like-for-like basis. Coaching attention should follow the bottom of this list.":"قارن الميسّرين على أساس متكافئ. يجب أن يتجه الدعم نحو أسفل القائمة.",
+ "Compare facilitators on a like-for-like basis. Coaching attention should follow the bottom of this list.":"قارن المشرفين على أساس متكافئ. يجب أن يتجه الدعم نحو أسفل القائمة.",
  "Sorted by":"مرتبة حسب","Click any row to drill in. Learning gain is the value-add signal — it controls for where students started.":"اضغط أي صف للتعمّق. التحسّن التعليمي هو مؤشر القيمة المضافة — فهو يراعي نقطة بداية الطلاب.",
  "Student action list":"قائمة إجراءات الطلاب","Ranked by attention priority. Each student shows why they're flagged and the next action.":"مرتبة حسب أولوية الاهتمام. يوضح كل طالب سبب الإشارة إليه والإجراء التالي.",
  "Priority":"الأولوية","Why":"السبب","Gain":"التحسّن","Att":"حضور","Acc":"دقة","Miss":"مهام","Recommended next action":"الإجراء التالي الموصى به",
